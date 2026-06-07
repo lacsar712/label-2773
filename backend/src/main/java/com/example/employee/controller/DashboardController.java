@@ -5,6 +5,7 @@ import com.example.employee.dto.DashboardOverviewDTO;
 import com.example.employee.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ public class DashboardController {
     private DashboardService dashboardService;
 
     @GetMapping("/overview")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
     public Result<DashboardOverviewDTO> getOverview(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,

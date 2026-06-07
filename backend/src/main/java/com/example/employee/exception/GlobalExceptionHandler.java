@@ -13,9 +13,12 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * Handle form validation exceptions
-     */
+    @ExceptionHandler(BusinessException.class)
+    public Result<String> handleBusinessException(BusinessException ex) {
+        log.error("Business error: ", ex);
+        return Result.error(ex.getCode(), ex.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<String> handleValidationExceptions(MethodArgumentNotValidException ex) {
         log.error("Validation error: ", ex);
@@ -26,9 +29,6 @@ public class GlobalExceptionHandler {
         return Result.error(message);
     }
 
-    /**
-     * Handle generic exceptions
-     */
     @ExceptionHandler(Exception.class)
     public Result<String> handleGenericException(Exception ex) {
         log.error("System error: ", ex);

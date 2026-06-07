@@ -7,6 +7,7 @@ import com.example.employee.service.DepartmentService;
 import com.example.employee.service.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,28 +24,33 @@ public class EmployeeController {
     private DepartmentService departmentService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public Result<List<Employee>> getAll() {
         return Result.success(employeeService.listWithDepartment());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public Result<Employee> getById(@PathVariable Long id) {
         return Result.success(employeeService.getByIdWithDepartment(id));
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Boolean> create(@RequestBody @Valid Employee employee) {
         validateDepartmentEnabled(employee.getDepartmentId());
         return Result.success(employeeService.save(employee));
     }
 
     @PutMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Boolean> update(@RequestBody @Valid Employee employee) {
         validateDepartmentEnabled(employee.getDepartmentId());
         return Result.success(employeeService.updateById(employee));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Boolean> delete(@PathVariable Long id) {
         return Result.success(employeeService.removeById(id));
     }

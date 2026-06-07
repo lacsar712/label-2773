@@ -19,7 +19,7 @@
                 style="width: 240px"
                 @change="handleDeptFilterChange"
               />
-              <a-button type="primary" class="add-btn" @click="showModal()">
+              <a-button v-permission="['ADMIN']" type="primary" class="add-btn" @click="showModal()">
                 <template #icon><plus-outlined /></template>
                 添加员工
               </a-button>
@@ -64,9 +64,9 @@
 
             <template v-if="column.key === 'action'">
               <a-space size="small">
-                <a-button type="link" class="action-btn edit" @click="showModal(record)">编辑</a-button>
-                <a-divider type="vertical" />
-                <a-popconfirm
+                <a-button v-permission="['ADMIN']" type="link" class="action-btn edit" @click="showModal(record)">编辑</a-button>
+                <a-divider v-permission="['ADMIN']" type="vertical" />
+                <a-popconfirm v-permission="['ADMIN']"
                   title="确定要删除吗?"
                   @confirm="handleDelete(record.id)"
                   ok-text="确定"

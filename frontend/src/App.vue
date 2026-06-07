@@ -1,32 +1,82 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { RouterView, useRoute } from 'vue-router';
-import { TeamOutlined, UserOutlined, DashboardOutlined } from '@ant-design/icons-vue';
+import { ref, computed, watch } from 'vue';
+import { RouterView, useRoute, useRouter } from 'vue-router';
+import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined } from '@ant-design/icons-vue';
+import { Dropdown, Modal, message } from 'ant-design-vue';
+import { useAuthStore } from './stores/auth';
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 const selectedKey = ref([route.path]);
 
-const menuItems = [
+watch(() => route.path, (newPath) => {
+  selectedKey.value = [newPath];
+});
+
+const showLayout = computed(() => {
+  return route.path !== '/login' && route.path !== '/change-password' && authStore.isLoggedIn;
+});
+
+const menuItems = computed(() => {
+  const items = [
+    {
+      key: '/',
+      icon: DashboardOutlined,
+      label: '数据概览',
+      roles: ['ADMIN', 'HR', 'EMPLOYEE'],
+    },
+  ];
+  if (authStore.hasRole(['ADMIN', 'HR'])) {
+    items.push({
+      key: '/employees',
+      icon: UserOutlined,
+      label: '员工管理',
+    });
+    items.push({
+      key: '/departments',
+      icon: TeamOutlined,
+      label: '部门管理',
+    });
+  }
+  return items;
+});
+
+const userMenuItems = [
   {
-    key: '/',
-    icon: DashboardOutlined,
-    label: '数据概览',
+    key: 'changePassword',
+    icon: KeyOutlined,
+    label: '修改密码',
   },
   {
-    key: '/employees',
-    icon: UserOutlined,
-    label: '员工管理',
-  },
-  {
-    key: '/departments',
-    icon: TeamOutlined,
-    label: '部门管理',
+    key: 'logout',
+    icon: LogoutOutlined,
+    label: '退出登录',
   },
 ];
+
+async function handleUserMenuClick({ key }: { key: string }) {
+  if (key === 'logout') {
+    Modal.confirm({
+      title: '提示',
+      content: '确定要退出登录吗？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        await authStore.logout();
+        message.success('已退出登录');
+        router.push('/login');
+      },
+    });
+  } else if (key === 'changePassword') {
+    router.push('/change-password');
+  }
+}
 </script>
 
 <template>
-  <a-layout style="min-height: 100vh">
+  <RouterView v-if="!showLayout" />
+  <a-layout v-else style="min-height: 100vh">
     <a-layout-sider width="220" theme="dark" :trigger="null" collapsible>
       <div class="logo">
         <div class="logo-icon">EM</div>
@@ -47,6 +97,21 @@ const menuItems = [
     <a-layout>
       <a-layout-header class="header">
         <span class="header-title">{{ route.meta?.title || '管理系统' }}</span>
+        <div class="header-right">
+          <a-dropdown :menu="{ items: userMenuItems, onClick: handleUserMenuClick }" placement="bottomRight">
+            <div class="user-info">
+              <a-avatar :style="{ backgroundColor: '#7265e6', verticalAlign: 'middle' }" size="small">
+                {{ authStore.userInfo?.nickname?.charAt(0) || authStore.userInfo?.username?.charAt(0) || 'U' }}
+              </a-avatar>
+              <span class="user-name">
+                {{ authStore.userInfo?.nickname || authStore.userInfo?.username }}
+              </span>
+              <a-tag color="blue" class="role-tag">
+                {{ authStore.userInfo?.roleName }}
+              </a-tag>
+            </div>
+          </a-dropdown>
+        </div>
       </a-layout-header>
       <a-layout-content class="content">
         <RouterView />
@@ -89,6 +154,7 @@ const menuItems = [
   padding: 0 24px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: sticky;
   top: 0;
@@ -101,7 +167,37 @@ const menuItems = [
   color: #2c3e50;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 20px;
+  transition: background-color 0.2s;
+}
+
+.user-info:hover {
+  background-color: #f5f7fa;
+}
+
+.user-name {
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.role-tag {
+  margin-left: 4px;
+}
+
 .content {
   background: #f5f7fa;
+  padding: 24px;
 }
 </style>

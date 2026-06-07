@@ -78,3 +78,84 @@ INSERT INTO employee (name, email, department_id, role, hire_date, leave_date, c
 ('马二十', 'ma20@example.com', 8, '产品经理', '2025-03-15', NULL, '2028-03-14', 2),
 ('胡二一', 'hu21@example.com', 7, '测试工程师', '2024-08-01', NULL, '2027-07-31', 1),
 ('郭二二', 'guo22@example.com', 5, '后端开发工程师', '2023-01-10', '2024-12-31', '2026-01-09', 4);
+
+-- 角色表
+CREATE TABLE IF NOT EXISTS sys_role (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_code VARCHAR(50) NOT NULL UNIQUE COMMENT '角色编码：ADMIN-管理员，HR-人力资源，EMPLOYEE-普通员工',
+    role_name VARCHAR(100) NOT NULL COMMENT '角色名称',
+    description VARCHAR(500) DEFAULT NULL COMMENT '角色描述',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+
+-- 用户表
+CREATE TABLE IF NOT EXISTS sys_user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(255) NOT NULL COMMENT '密码（BCrypt加密）',
+    nickname VARCHAR(100) DEFAULT NULL COMMENT '昵称',
+    email VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
+    phone VARCHAR(20) DEFAULT NULL COMMENT '手机号',
+    avatar VARCHAR(500) DEFAULT NULL COMMENT '头像URL',
+    role_id BIGINT NOT NULL COMMENT '角色ID',
+    status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '状态：1-正常，0-禁用',
+    is_first_login TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否首次登录：1-是，0-否',
+    login_fail_count INT NOT NULL DEFAULT 0 COMMENT '连续登录失败次数',
+    lock_time DATETIME DEFAULT NULL COMMENT '锁定时间',
+    last_login_time DATETIME DEFAULT NULL COMMENT '最后登录时间',
+    last_login_ip VARCHAR(50) DEFAULT NULL COMMENT '最后登录IP',
+    session_token VARCHAR(255) DEFAULT NULL COMMENT '当前会话Token（用于异地登录强制下线）',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_username (username),
+    INDEX idx_role_id (role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+
+-- 登录日志表
+CREATE TABLE IF NOT EXISTS sys_login_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT DEFAULT NULL COMMENT '用户ID',
+    username VARCHAR(50) DEFAULT NULL COMMENT '用户名',
+    login_type TINYINT NOT NULL DEFAULT 1 COMMENT '登录类型：1-登录，2-登出',
+    status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '状态：1-成功，0-失败',
+    ip_address VARCHAR(50) DEFAULT NULL COMMENT 'IP地址',
+    login_location VARCHAR(200) DEFAULT NULL COMMENT '登录地点',
+    browser VARCHAR(100) DEFAULT NULL COMMENT '浏览器',
+    os VARCHAR(100) DEFAULT NULL COMMENT '操作系统',
+    device VARCHAR(100) DEFAULT NULL COMMENT '设备信息',
+    message VARCHAR(500) DEFAULT NULL COMMENT '提示消息',
+    login_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+    INDEX idx_user_id (user_id),
+    INDEX idx_login_time (login_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志表';
+
+-- 图形验证码缓存表
+CREATE TABLE IF NOT EXISTS sys_captcha (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    uuid VARCHAR(100) NOT NULL UNIQUE COMMENT '验证码唯一标识',
+    code VARCHAR(10) NOT NULL COMMENT '验证码',
+    expire_time DATETIME NOT NULL COMMENT '过期时间',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_uuid (uuid),
+    INDEX idx_expire_time (expire_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图形验证码表';
+
+-- 插入角色数据
+INSERT INTO sys_role (role_code, role_name, description) VALUES
+('ADMIN', '系统管理员', '拥有系统所有权限'),
+('HR', '人力资源', '管理员工和部门信息'),
+('EMPLOYEE', '普通员工', '查看个人信息和数据概览');
+
+-- 插入默认管理员账号（用户名: admin, 密码: admin123，使用BCrypt加密）
+-- BCrypt加密后的 admin123: $2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2
+INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
+('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', 'admin@example.com', 1, 1, 1);
+
+-- 插入测试HR账号（用户名: hr, 密码: hr123456）
+INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
+('hr', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'HR管理员', 'hr@example.com', 2, 1, 1);
+
+-- 插入测试普通员工账号（用户名: employee, 密码: emp123456）
+INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
+('employee', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '普通员工', 'employee@example.com', 3, 1, 1);

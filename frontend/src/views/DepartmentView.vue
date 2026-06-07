@@ -21,7 +21,7 @@
                 通知
                 <a-badge :count="store.notifications.length" :offset="[-4, 2]" />
               </a-button>
-              <a-button type="primary" class="add-btn" @click="showModal()">
+              <a-button v-permission="['ADMIN']" type="primary" class="add-btn" @click="showModal()">
                 <template #icon><plus-outlined /></template>
                 添加部门
               </a-button>
@@ -69,9 +69,9 @@
                 </template>
                 <template v-if="column.key === 'action'">
                   <a-space size="small">
-                    <a-button type="link" class="action-btn" @click="showModal(record)">编辑</a-button>
-                    <a-divider type="vertical" />
-                    <a-popconfirm
+                    <a-button v-permission="['ADMIN']" type="link" class="action-btn" @click="showModal(record)">编辑</a-button>
+                    <a-divider v-permission="['ADMIN']" type="vertical" />
+                    <a-popconfirm v-permission="['ADMIN']"
                       :title="record.enabled ? '确定要停用该部门吗？子部门将同步停用' : '确定要启用该部门吗？'"
                       @confirm="handleToggle(record)"
                       ok-text="确定"
@@ -81,8 +81,8 @@
                         {{ record.enabled ? '停用' : '启用' }}
                       </a-button>
                     </a-popconfirm>
-                    <a-divider type="vertical" />
-                    <a-popconfirm
+                    <a-divider v-permission="['ADMIN']" type="vertical" />
+                    <a-popconfirm v-permission="['ADMIN']"
                       title="确定要删除吗？存在下级部门或员工时无法删除"
                       @confirm="handleDelete(record.id)"
                       ok-text="确定"
@@ -134,9 +134,9 @@
                 </template>
                 <template v-if="column.key === 'action'">
                   <a-space size="small">
-                    <a-button type="link" class="action-btn" @click="showModal(record)">编辑</a-button>
-                    <a-divider type="vertical" />
-                    <a-popconfirm
+                    <a-button v-permission="['ADMIN']" type="link" class="action-btn" @click="showModal(record)">编辑</a-button>
+                    <a-divider v-permission="['ADMIN']" type="vertical" />
+                    <a-popconfirm v-permission="['ADMIN']"
                       :title="record.enabled ? '确定要停用该部门吗？子部门将同步停用' : '确定要启用该部门吗？'"
                       @confirm="handleToggle(record)"
                       ok-text="确定"
@@ -146,8 +146,8 @@
                         {{ record.enabled ? '停用' : '启用' }}
                       </a-button>
                     </a-popconfirm>
-                    <a-divider type="vertical" />
-                    <a-popconfirm
+                    <a-divider v-permission="['ADMIN']" type="vertical" />
+                    <a-popconfirm v-permission="['ADMIN']"
                       title="确定要删除吗？存在下级部门或员工时无法删除"
                       @confirm="handleDelete(record.id)"
                       ok-text="确定"

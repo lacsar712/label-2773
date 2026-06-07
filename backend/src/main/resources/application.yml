@@ -23,3 +23,10 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /docs
+
+jwt:
+  secret: employee-management-system-secret-key-2024-must-be-at-least-256-bits-long
+  access-token-expire: 7200000
+  refresh-token-expire: 604800000
+  header: Authorization
+  prefix: "Bearer "
