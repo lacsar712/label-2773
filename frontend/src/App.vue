@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
-import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined } from '@ant-design/icons-vue';
+import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined, NotificationOutlined, BellOutlined } from '@ant-design/icons-vue';
 import { Dropdown, Modal, message } from 'ant-design-vue';
 import { useAuthStore } from './stores/auth';
 
@@ -70,6 +70,12 @@ const menuItems = computed(() => {
     label: '我的入职清单',
     roles: ['ADMIN', 'HR', 'EMPLOYEE'],
   });
+  items.push({
+    key: '/announcements',
+    icon: BellOutlined,
+    label: '公告通知',
+    roles: ['ADMIN', 'HR', 'EMPLOYEE'],
+  });
   if (authStore.hasRole(['ADMIN', 'HR'])) {
     items.push({
       key: '/employees',
@@ -115,6 +121,11 @@ const menuItems = computed(() => {
       key: '/onboarding/manage',
       icon: UserAddOutlined,
       label: '入职清单管理',
+    });
+    items.push({
+      key: '/admin/announcements',
+      icon: NotificationOutlined,
+      label: '公告管理',
     });
   }
   return items;

@@ -800,3 +800,58 @@ INSERT INTO onboarding_template_item (template_id, item_name, item_description, 
 (2, '技术架构与中间件培训', '公司整体技术架构、中间件使用规范培训', 3, 6, 7, 'MENTOR', NULL, NULL),
 (2, '安全规范与数据权限培训', '代码安全、数据安全、权限管理规范培训', 4, 4, 15, 'MENTOR', NULL, NULL);
 
+-- ==================== 公告通知模块 ====================
+
+-- 公告主表
+CREATE TABLE IF NOT EXISTS announcement (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL COMMENT '公告标题',
+    content LONGTEXT COMMENT '富文本正文',
+    cover_image VARCHAR(500) DEFAULT NULL COMMENT '封面图URL',
+    visibility_type TINYINT NOT NULL DEFAULT 1 COMMENT '可见范围：1-全员，2-指定部门，3-指定角色',
+    effective_time DATETIME DEFAULT NULL COMMENT '生效时间',
+    expire_time DATETIME DEFAULT NULL COMMENT '过期时间',
+    is_pinned TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否置顶：0-否，1-是',
+    is_important TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否重要：0-否，1-是',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-草稿，1-待发布（定时），2-已发布，3-已归档',
+    publish_time DATETIME DEFAULT NULL COMMENT '发布时间',
+    creator_id BIGINT DEFAULT NULL COMMENT '创建人ID',
+    creator_name VARCHAR(100) DEFAULT NULL COMMENT '创建人姓名',
+    read_count INT NOT NULL DEFAULT 0 COMMENT '已读人数',
+    total_target_count INT NOT NULL DEFAULT 0 COMMENT '目标总人数',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_status (status),
+    INDEX idx_publish_time (publish_time),
+    INDEX idx_is_pinned (is_pinned),
+    INDEX idx_creator (creator_id),
+    INDEX idx_effective_expire (effective_time, expire_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告主表';
+
+-- 公告可见范围关联表
+CREATE TABLE IF NOT EXISTS announcement_visibility (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    announcement_id BIGINT NOT NULL COMMENT '公告ID',
+    target_type TINYINT NOT NULL COMMENT '目标类型：1-部门，2-角色',
+    target_id BIGINT NOT NULL COMMENT '目标ID（部门ID或角色ID）',
+    target_name VARCHAR(100) DEFAULT NULL COMMENT '目标名称',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_announcement (announcement_id),
+    INDEX idx_target (target_type, target_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告可见范围关联表';
+
+-- 公告阅读记录表
+CREATE TABLE IF NOT EXISTS announcement_read (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    announcement_id BIGINT NOT NULL COMMENT '公告ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    user_name VARCHAR(100) DEFAULT NULL COMMENT '用户姓名',
+    employee_id BIGINT DEFAULT NULL COMMENT '员工ID',
+    department_id BIGINT DEFAULT NULL COMMENT '部门ID',
+    read_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '阅读时间',
+    UNIQUE KEY uk_announcement_user (announcement_id, user_id),
+    INDEX idx_announcement (announcement_id),
+    INDEX idx_user (user_id),
+    INDEX idx_department (department_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告阅读记录表';
+

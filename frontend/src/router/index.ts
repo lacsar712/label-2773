@@ -20,6 +20,10 @@ import OnboardingTemplateView from '../views/OnboardingTemplateView.vue';
 import OnboardingChecklistListView from '../views/OnboardingChecklistListView.vue';
 import OnboardingChecklistDetailView from '../views/OnboardingChecklistDetailView.vue';
 import MyOnboardingView from '../views/MyOnboardingView.vue';
+import AnnouncementView from '../views/AnnouncementView.vue';
+import AnnouncementManageView from '../views/AnnouncementManageView.vue';
+import AnnouncementEditView from '../views/AnnouncementEditView.vue';
+import AnnouncementDetailView from '../views/AnnouncementDetailView.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -149,6 +153,36 @@ const routes: RouteRecordRaw[] = [
     name: 'onboarding-detail',
     component: OnboardingChecklistDetailView,
     meta: { title: '入职清单详情', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/announcements',
+    name: 'announcements',
+    component: AnnouncementView,
+    meta: { title: '公告通知', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/announcements/:id',
+    name: 'announcement-detail',
+    component: AnnouncementDetailView,
+    meta: { title: '公告详情', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/admin/announcements',
+    name: 'admin-announcements',
+    component: AnnouncementManageView,
+    meta: { title: '公告管理', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/admin/announcements/new',
+    name: 'admin-announcement-new',
+    component: AnnouncementEditView,
+    meta: { title: '新建公告', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/admin/announcements/edit/:id',
+    name: 'admin-announcement-edit',
+    component: AnnouncementEditView,
+    meta: { title: '编辑公告', requiresAuth: true, roles: ['ADMIN', 'HR'] },
   },
   {
     path: '/:pathMatch(.*)*',
