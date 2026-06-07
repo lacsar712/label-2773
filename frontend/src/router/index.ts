@@ -16,6 +16,10 @@ import SalaryRecordView from '../views/SalaryRecordView.vue';
 import SalaryTemplateView from '../views/SalaryTemplateView.vue';
 import MySalaryView from '../views/MySalaryView.vue';
 import SalaryReportView from '../views/SalaryReportView.vue';
+import OnboardingTemplateView from '../views/OnboardingTemplateView.vue';
+import OnboardingChecklistListView from '../views/OnboardingChecklistListView.vue';
+import OnboardingChecklistDetailView from '../views/OnboardingChecklistDetailView.vue';
+import MyOnboardingView from '../views/MyOnboardingView.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -121,6 +125,30 @@ const routes: RouteRecordRaw[] = [
     name: 'salary-report',
     component: SalaryReportView,
     meta: { title: '人力成本报表', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/onboarding/my',
+    name: 'onboarding-my',
+    component: MyOnboardingView,
+    meta: { title: '我的入职清单', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/onboarding/templates',
+    name: 'onboarding-templates',
+    component: OnboardingTemplateView,
+    meta: { title: '入职模板管理', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/onboarding/manage',
+    name: 'onboarding-manage',
+    component: OnboardingChecklistListView,
+    meta: { title: '入职清单管理', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/onboarding/checklist/:id',
+    name: 'onboarding-detail',
+    component: OnboardingChecklistDetailView,
+    meta: { title: '入职清单详情', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
   },
   {
     path: '/:pathMatch(.*)*',

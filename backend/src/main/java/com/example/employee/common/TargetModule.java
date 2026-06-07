@@ -6,7 +6,9 @@ public enum TargetModule {
     DEPARTMENT("DEPARTMENT", "部门管理"),
     SALARY("SALARY", "薪资管理"),
     ATTENDANCE("ATTENDANCE", "考勤管理"),
-    LEAVE("LEAVE", "请假管理");
+    LEAVE("LEAVE", "请假管理"),
+    ONBOARDING_TEMPLATE("ONBOARDING_TEMPLATE", "入职模板管理"),
+    ONBOARDING_CHECKLIST("ONBOARDING_CHECKLIST", "入职清单管理");
 
     private final String code;
     private final String desc;

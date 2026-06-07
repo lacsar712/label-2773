@@ -657,3 +657,146 @@ CREATE TABLE IF NOT EXISTS user_tree_state (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户树状态记忆表';
 
+-- ==================== 入职清单模块 ====================
+
+-- 入职清单模板表
+CREATE TABLE IF NOT EXISTS onboarding_template (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    template_name VARCHAR(200) NOT NULL COMMENT '模板名称',
+    department_id BIGINT DEFAULT NULL COMMENT '适用部门ID（NULL表示通用）',
+    department_name VARCHAR(100) DEFAULT NULL COMMENT '适用部门名称',
+    position VARCHAR(100) DEFAULT NULL COMMENT '适用岗位（NULL表示通用）',
+    description VARCHAR(500) DEFAULT NULL COMMENT '模板描述',
+    enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
+    is_default TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否默认模板',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_department (department_id),
+    INDEX idx_position (position),
+    INDEX idx_enabled (enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='入职清单模板表';
+
+-- 入职清单模板待办项表
+CREATE TABLE IF NOT EXISTS onboarding_template_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    template_id BIGINT NOT NULL COMMENT '模板ID',
+    item_name VARCHAR(200) NOT NULL COMMENT '待办事项名称',
+    item_description VARCHAR(500) DEFAULT NULL COMMENT '事项描述',
+    stage TINYINT NOT NULL COMMENT '阶段：1-入职前，2-首日，3-首周，4-首月',
+    sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+    due_days INT NOT NULL DEFAULT 0 COMMENT '相对入职日期的截止天数（0=入职当天，负数=入职前）',
+    responsible_role VARCHAR(50) NOT NULL COMMENT '责任人角色：NEW_EMPLOYEE-新员工，MENTOR-导师，HR-HR，DEPARTMENT_HEAD-部门负责人，SPECIFIC-指定人员',
+    responsible_user_id BIGINT DEFAULT NULL COMMENT '指定责任人ID（当responsible_role=SPECIFIC时）',
+    responsible_user_name VARCHAR(100) DEFAULT NULL COMMENT '指定责任人姓名',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_template_id (template_id),
+    INDEX idx_stage (stage)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='入职清单模板待办项表';
+
+-- 员工入职清单表
+CREATE TABLE IF NOT EXISTS onboarding_checklist (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    employee_name VARCHAR(100) NOT NULL COMMENT '员工姓名',
+    department_id BIGINT DEFAULT NULL COMMENT '部门ID',
+    department_name VARCHAR(100) DEFAULT NULL COMMENT '部门名称',
+    position VARCHAR(100) DEFAULT NULL COMMENT '岗位',
+    hire_date DATE NOT NULL COMMENT '入职日期',
+    template_id BIGINT DEFAULT NULL COMMENT '使用的模板ID',
+    template_name VARCHAR(200) DEFAULT NULL COMMENT '使用的模板名称',
+    mentor_id BIGINT DEFAULT NULL COMMENT '导师ID',
+    mentor_name VARCHAR(100) DEFAULT NULL COMMENT '导师姓名',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-进行中，1-已完成，2-已归档',
+    progress INT NOT NULL DEFAULT 0 COMMENT '整体进度百分比(0-100)',
+    pre_join_progress INT NOT NULL DEFAULT 0 COMMENT '入职前进度(%)',
+    first_day_progress INT NOT NULL DEFAULT 0 COMMENT '首日进度(%)',
+    first_week_progress INT NOT NULL DEFAULT 0 COMMENT '首周进度(%)',
+    first_month_progress INT NOT NULL DEFAULT 0 COMMENT '首月进度(%)',
+    archived_time DATETIME DEFAULT NULL COMMENT '归档时间',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_employee (employee_id),
+    INDEX idx_status (status),
+    INDEX idx_department (department_id),
+    INDEX idx_hire_date (hire_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工入职清单表';
+
+-- 员工入职清单待办项表
+CREATE TABLE IF NOT EXISTS onboarding_checklist_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    checklist_id BIGINT NOT NULL COMMENT '入职清单ID',
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    template_item_id BIGINT DEFAULT NULL COMMENT '来源模板项ID（临时待办为NULL）',
+    item_name VARCHAR(200) NOT NULL COMMENT '待办事项名称',
+    item_description VARCHAR(500) DEFAULT NULL COMMENT '事项描述',
+    stage TINYINT NOT NULL COMMENT '阶段：1-入职前，2-首日，3-首周，4-首月',
+    sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+    is_temporary TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否临时追加：0-否，1-是',
+    responsible_user_id BIGINT DEFAULT NULL COMMENT '责任人ID',
+    responsible_user_name VARCHAR(100) DEFAULT NULL COMMENT '责任人姓名',
+    due_date DATE NOT NULL COMMENT '截止日期',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-未开始，1-进行中，2-已完成，3-已逾期',
+    completed_user_id BIGINT DEFAULT NULL COMMENT '完成人ID',
+    completed_user_name VARCHAR(100) DEFAULT NULL COMMENT '完成人姓名',
+    completed_time DATETIME DEFAULT NULL COMMENT '完成时间',
+    remark VARCHAR(1000) DEFAULT NULL COMMENT '备注',
+    notification_sent TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逾期通知是否已发送：0-否，1-是',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_checklist_id (checklist_id),
+    INDEX idx_employee_id (employee_id),
+    INDEX idx_status (status),
+    INDEX idx_due_date (due_date),
+    INDEX idx_responsible (responsible_user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工入职清单待办项表';
+
+-- 入职消息通知表
+CREATE TABLE IF NOT EXISTS onboarding_notification (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    checklist_id BIGINT DEFAULT NULL COMMENT '入职清单ID',
+    checklist_item_id BIGINT DEFAULT NULL COMMENT '待办项ID',
+    recipient_id BIGINT NOT NULL COMMENT '接收人ID',
+    recipient_name VARCHAR(100) NOT NULL COMMENT '接收人姓名',
+    notification_type TINYINT NOT NULL COMMENT '通知类型：1-待办分配，2-即将逾期，3-已逾期，4-完成提醒，5-清单完成',
+    title VARCHAR(200) NOT NULL COMMENT '通知标题',
+    content VARCHAR(1000) NOT NULL COMMENT '通知内容',
+    is_read TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已读：0-否，1-是',
+    read_time DATETIME DEFAULT NULL COMMENT '阅读时间',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_recipient (recipient_id),
+    INDEX idx_is_read (is_read),
+    INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='入职消息通知表';
+
+-- 初始化入职清单模板示例数据
+INSERT INTO onboarding_template (template_name, department_id, department_name, position, description, enabled, is_default) VALUES
+('通用入职模板', NULL, NULL, NULL, '适用于所有岗位的通用入职流程', 1, 1),
+('技术研发入职模板', 2, '技术中心', NULL, '技术中心所有研发岗位通用入职模板', 1, 0),
+('产品设计入职模板', 3, '产品中心', NULL, '产品中心所有岗位通用入职模板', 1, 0),
+('后端开发专项模板', 5, '后端开发部', '后端开发工程师', '后端开发工程师专项入职流程', 1, 0);
+
+-- 初始化通用入职模板待办项
+INSERT INTO onboarding_template_item (template_id, item_name, item_description, stage, sort_order, due_days, responsible_role, responsible_user_id, responsible_user_name) VALUES
+(1, '发送入职Offer及资料包', '向新员工发送正式Offer、入职须知、需准备材料清单', 1, 1, -7, 'HR', NULL, NULL),
+(1, '确认入职材料齐全', '确认身份证、学历证明、离职证明等材料是否准备齐全', 1, 2, -3, 'HR', NULL, NULL),
+(1, '开通公司邮箱及系统账号', '为新员工开通企业邮箱、OA系统、VPN等基础账号', 1, 3, -1, 'HR', NULL, NULL),
+(1, '准备工位及办公设备', '安排工位，准备电脑、显示器、键盘鼠标等办公设备', 1, 4, -1, 'DEPARTMENT_HEAD', NULL, NULL),
+(1, '签署劳动合同及保密协议', '完成劳动合同、保密协议、竞业协议等文件签署', 2, 1, 0, 'HR', NULL, NULL),
+(1, '领取办公设备', '领取电脑、工牌、门禁卡等办公设备并登记', 2, 2, 0, 'HR', NULL, NULL),
+(1, '公司介绍与文化培训', '公司发展历程、组织架构、企业文化、规章制度培训', 2, 3, 0, 'HR', NULL, NULL),
+(1, '部门及团队介绍', '部门负责人介绍部门职责、团队成员及工作流程', 2, 4, 0, 'DEPARTMENT_HEAD', NULL, NULL),
+(1, '导师见面会', '与分配的导师进行一对一沟通，明确导师职责', 3, 1, 3, 'MENTOR', NULL, NULL),
+(1, '业务知识系统培训', '产品介绍、业务流程、技术架构等系统性培训', 3, 2, 5, 'MENTOR', NULL, NULL),
+(1, '开发环境搭建与权限申请', '申请代码库、开发环境、测试环境等相关权限', 3, 3, 5, 'MENTOR', NULL, NULL),
+(1, '参与第一个小任务', '在导师指导下完成第一个简单的工作任务', 3, 4, 7, 'MENTOR', NULL, NULL),
+(1, '试用期目标制定', '与导师和主管共同制定试用期工作目标和考核标准', 4, 1, 14, 'DEPARTMENT_HEAD', NULL, NULL),
+(1, '独立承担模块工作', '开始独立承担一个模块的开发/设计工作', 4, 2, 21, 'MENTOR', NULL, NULL),
+(1, '首月工作总结与沟通', '与HR、导师进行首月工作回顾和沟通', 4, 3, 30, 'HR', NULL, NULL);
+
+-- 初始化技术研发入职模板待办项（在通用基础上增加专项）
+INSERT INTO onboarding_template_item (template_id, item_name, item_description, stage, sort_order, due_days, responsible_role, responsible_user_id, responsible_user_name) VALUES
+(2, '代码规范与Git流程培训', '公司代码规范、分支策略、Code Review流程培训', 3, 5, 5, 'MENTOR', NULL, NULL),
+(2, '技术架构与中间件培训', '公司整体技术架构、中间件使用规范培训', 3, 6, 7, 'MENTOR', NULL, NULL),
+(2, '安全规范与数据权限培训', '代码安全、数据安全、权限管理规范培训', 4, 4, 15, 'MENTOR', NULL, NULL);
+

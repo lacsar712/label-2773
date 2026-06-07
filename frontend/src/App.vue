@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
-import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined } from '@ant-design/icons-vue';
+import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined } from '@ant-design/icons-vue';
 import { Dropdown, Modal, message } from 'ant-design-vue';
 import { useAuthStore } from './stores/auth';
 
@@ -64,6 +64,12 @@ const menuItems = computed(() => {
     label: '我的薪资',
     roles: ['ADMIN', 'HR', 'EMPLOYEE'],
   });
+  items.push({
+    key: '/onboarding/my',
+    icon: ProfileOutlined,
+    label: '我的入职清单',
+    roles: ['ADMIN', 'HR', 'EMPLOYEE'],
+  });
   if (authStore.hasRole(['ADMIN', 'HR'])) {
     items.push({
       key: '/employees',
@@ -99,6 +105,16 @@ const menuItems = computed(() => {
       key: '/salary/report',
       icon: PieChartOutlined,
       label: '人力成本',
+    });
+    items.push({
+      key: '/onboarding/templates',
+      icon: SolutionOutlined,
+      label: '入职模板管理',
+    });
+    items.push({
+      key: '/onboarding/manage',
+      icon: UserAddOutlined,
+      label: '入职清单管理',
     });
   }
   return items;
