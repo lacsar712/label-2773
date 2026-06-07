@@ -315,3 +315,169 @@ INSERT INTO attendance_rule (rule_name, rule_type, work_start_time, work_end_tim
 ('标准工时（9:00-18:00）', 1, '09:00:00', '18:00:00', NULL, NULL, 480, 5, 5, '公司总部', 1, 1),
 ('弹性工时（核心10:00-16:00）', 2, '10:00:00', '16:00:00', '07:00:00', '20:00:00', 480, 5, 5, '公司总部', 0, 1);
 
+-- ==================== 请假模块 ====================
+
+-- 节假日表
+CREATE TABLE IF NOT EXISTS holiday (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    holiday_date DATE NOT NULL COMMENT '节假日日期',
+    holiday_name VARCHAR(100) NOT NULL COMMENT '节假日名称',
+    holiday_type TINYINT NOT NULL DEFAULT 1 COMMENT '类型：1-法定假日，2-周末调休补班',
+    year INT NOT NULL COMMENT '年份',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    UNIQUE KEY uk_holiday_date (holiday_date),
+    INDEX idx_year (year)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='节假日表';
+
+-- 假期余额表
+CREATE TABLE IF NOT EXISTS leave_balance (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    employee_name VARCHAR(100) DEFAULT NULL COMMENT '员工姓名',
+    leave_type TINYINT NOT NULL COMMENT '假期类型：1-年假，2-事假，3-病假，4-调休',
+    total_days DECIMAL(8,2) NOT NULL DEFAULT 0 COMMENT '总天数',
+    used_days DECIMAL(8,2) NOT NULL DEFAULT 0 COMMENT '已用天数',
+    remaining_days DECIMAL(8,2) NOT NULL DEFAULT 0 COMMENT '剩余天数',
+    year INT NOT NULL COMMENT '年度',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_employee_type_year (employee_id, leave_type, year),
+    INDEX idx_employee_id (employee_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='假期余额表';
+
+-- 请假申请表
+CREATE TABLE IF NOT EXISTS leave_application (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    application_no VARCHAR(50) NOT NULL UNIQUE COMMENT '申请单号',
+    employee_id BIGINT NOT NULL COMMENT '申请人ID',
+    employee_name VARCHAR(100) DEFAULT NULL COMMENT '申请人姓名',
+    department_id BIGINT DEFAULT NULL COMMENT '部门ID',
+    department_name VARCHAR(100) DEFAULT NULL COMMENT '部门名称',
+    leave_type TINYINT NOT NULL COMMENT '假期类型：1-年假，2-事假，3-病假，4-调休',
+    start_date DATE NOT NULL COMMENT '开始日期',
+    end_date DATE NOT NULL COMMENT '结束日期',
+    start_half TINYINT DEFAULT 0 COMMENT '开始日期半天标记：0-全天，1-上午，2-下午',
+    end_half TINYINT DEFAULT 0 COMMENT '结束日期半天标记：0-全天，1-上午，2-下午',
+    total_days DECIMAL(8,2) NOT NULL COMMENT '实际请假天数（扣减节假日）',
+    reason VARCHAR(1000) NOT NULL COMMENT '请假事由',
+    attachment VARCHAR(500) DEFAULT NULL COMMENT '附件路径',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-待提交，1-审批中，2-已通过，3-已驳回，4-已撤销',
+    current_node_index INT DEFAULT 0 COMMENT '当前审批节点索引',
+    current_approver_id BIGINT DEFAULT NULL COMMENT '当前审批人ID',
+    current_approver_name VARCHAR(100) DEFAULT NULL COMMENT '当前审批人姓名',
+    submit_time DATETIME DEFAULT NULL COMMENT '提交时间',
+    approval_time DATETIME DEFAULT NULL COMMENT '最终审批时间',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_employee_id (employee_id),
+    INDEX idx_status (status),
+    INDEX idx_current_approver (current_approver_id),
+    INDEX idx_department_id (department_id),
+    INDEX idx_start_date (start_date),
+    INDEX idx_end_date (end_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='请假申请表';
+
+-- 请假审批节点表
+CREATE TABLE IF NOT EXISTS leave_approval_node (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    application_id BIGINT NOT NULL COMMENT '请假申请ID',
+    node_index INT NOT NULL COMMENT '节点顺序（从0开始）',
+    node_name VARCHAR(100) NOT NULL COMMENT '节点名称',
+    approver_id BIGINT NOT NULL COMMENT '审批人ID',
+    approver_name VARCHAR(100) DEFAULT NULL COMMENT '审批人姓名',
+    node_type TINYINT NOT NULL DEFAULT 1 COMMENT '节点类型：1-正常审批，2-加签',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '节点状态：0-待审批，1-已通过，2-已驳回，3-已转交，4-已跳过',
+    approval_remark VARCHAR(1000) DEFAULT NULL COMMENT '审批意见',
+    approval_time DATETIME DEFAULT NULL COMMENT '审批时间',
+    original_approver_id BIGINT DEFAULT NULL COMMENT '转交前原审批人ID',
+    original_approver_name VARCHAR(100) DEFAULT NULL COMMENT '转交前原审批人姓名',
+    add_sign_approver_id BIGINT DEFAULT NULL COMMENT '加签人ID',
+    add_sign_approver_name VARCHAR(100) DEFAULT NULL COMMENT '加签人姓名',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_application_id (application_id),
+    INDEX idx_approver_id (approver_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='请假审批节点表';
+
+-- 请假审批流程配置表
+CREATE TABLE IF NOT EXISTS leave_approval_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    leave_type TINYINT NOT NULL COMMENT '假期类型：1-年假，2-事假，3-病假，4-调休，0-全部',
+    min_days DECIMAL(8,2) DEFAULT 0 COMMENT '最小请假天数（含）',
+    max_days DECIMAL(8,2) DEFAULT 9999 COMMENT '最大请假天数（含）',
+    department_id BIGINT DEFAULT NULL COMMENT '部门ID（NULL表示全局配置）',
+    node_index INT NOT NULL COMMENT '节点顺序（从0开始）',
+    node_name VARCHAR(100) NOT NULL COMMENT '节点名称',
+    approver_role VARCHAR(50) NOT NULL COMMENT '审批人角色：DIRECT_MANAGER-直属主管，DEPARTMENT_HEAD-部门负责人，HR-HR，SPECIFIC-指定人员',
+    approver_id BIGINT DEFAULT NULL COMMENT '指定审批人ID（当approver_role=SPECIFIC时）',
+    skip_condition VARCHAR(200) DEFAULT NULL COMMENT '跳过条件表达式（预留）',
+    enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_leave_type (leave_type),
+    INDEX idx_department (department_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='请假审批流程配置表';
+
+-- 初始化请假审批流程配置（全局默认：直属主管 -> 部门负责人 -> HR）
+INSERT INTO leave_approval_config (leave_type, min_days, max_days, department_id, node_index, node_name, approver_role, approver_id, skip_condition, enabled) VALUES
+(0, 0, 9999, NULL, 0, '直属主管审批', 'DIRECT_MANAGER', NULL, NULL, 1),
+(0, 0, 9999, NULL, 1, '部门负责人审批', 'DEPARTMENT_HEAD', NULL, NULL, 1),
+(0, 0, 9999, NULL, 2, 'HR审批', 'HR', NULL, NULL, 1);
+
+-- 初始化2026年部分节假日示例数据
+INSERT INTO holiday (holiday_date, holiday_name, holiday_type, year) VALUES
+('2026-01-01', '元旦', 1, 2026),
+('2026-01-02', '元旦', 1, 2026),
+('2026-01-03', '元旦', 1, 2026),
+('2026-02-16', '春节', 1, 2026),
+('2026-02-17', '春节', 1, 2026),
+('2026-02-18', '春节', 1, 2026),
+('2026-02-19', '春节', 1, 2026),
+('2026-02-20', '春节', 1, 2026),
+('2026-02-21', '春节', 1, 2026),
+('2026-02-22', '春节', 1, 2026),
+('2026-04-04', '清明节', 1, 2026),
+('2026-04-05', '清明节', 1, 2026),
+('2026-04-06', '清明节', 1, 2026),
+('2026-05-01', '劳动节', 1, 2026),
+('2026-05-02', '劳动节', 1, 2026),
+('2026-05-03', '劳动节', 1, 2026),
+('2026-05-04', '劳动节', 1, 2026),
+('2026-05-05', '劳动节', 1, 2026),
+('2026-06-19', '端午节', 1, 2026),
+('2026-06-20', '端午节', 1, 2026),
+('2026-06-21', '端午节', 1, 2026),
+('2026-09-25', '中秋节', 1, 2026),
+('2026-09-26', '中秋节', 1, 2026),
+('2026-09-27', '中秋节', 1, 2026),
+('2026-10-01', '国庆节', 1, 2026),
+('2026-10-02', '国庆节', 1, 2026),
+('2026-10-03', '国庆节', 1, 2026),
+('2026-10-04', '国庆节', 1, 2026),
+('2026-10-05', '国庆节', 1, 2026),
+('2026-10-06', '国庆节', 1, 2026),
+('2026-10-07', '国庆节', 1, 2026);
+
+-- 初始化员工假期余额（为现有在职员工初始化2026年度年假）
+INSERT INTO leave_balance (employee_id, employee_name, leave_type, total_days, used_days, remaining_days, year, remark)
+SELECT e.id, e.name, 1, 
+       CASE 
+           WHEN DATEDIFF('2026-12-31', e.hire_date) >= 3650 THEN 15
+           WHEN DATEDIFF('2026-12-31', e.hire_date) >= 3650 THEN 10
+           WHEN DATEDIFF('2026-12-31', e.hire_date) >= 365 THEN 5
+           ELSE 0
+       END,
+       0,
+       CASE 
+           WHEN DATEDIFF('2026-12-31', e.hire_date) >= 3650 THEN 15
+           WHEN DATEDIFF('2026-12-31', e.hire_date) >= 365 THEN 10
+           WHEN DATEDIFF('2026-12-31', e.hire_date) >= 365 THEN 5
+           ELSE 0
+       END,
+       2026,
+       '系统初始化'
+FROM employee e WHERE e.status IN (1, 2, 3)
+ON DUPLICATE KEY UPDATE remaining_days = VALUES(remaining_days);
+

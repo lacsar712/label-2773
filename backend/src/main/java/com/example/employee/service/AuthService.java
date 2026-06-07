@@ -8,9 +8,11 @@ import com.example.employee.dto.ChangePasswordRequestDTO;
 import com.example.employee.dto.LoginRequestDTO;
 import com.example.employee.dto.LoginResponseDTO;
 import com.example.employee.dto.UserInfoDTO;
+import com.example.employee.entity.Employee;
 import com.example.employee.entity.SysRole;
 import com.example.employee.entity.SysUser;
 import com.example.employee.exception.BusinessException;
+import com.example.employee.mapper.EmployeeMapper;
 import com.example.employee.mapper.SysCaptchaMapper;
 import com.example.employee.mapper.SysRoleMapper;
 import com.example.employee.mapper.SysUserMapper;
@@ -35,6 +37,9 @@ public class AuthService {
 
     @Autowired
     private SysRoleMapper sysRoleMapper;
+
+    @Autowired
+    private EmployeeMapper employeeMapper;
 
     @Autowired
     private SysCaptchaMapper sysCaptchaMapper;
@@ -131,6 +136,7 @@ public class AuthService {
         response.setTokenType("Bearer");
         response.setExpiresIn(jwtConfig.getAccessTokenExpire() / 1000);
         response.setUserId(user.getId());
+        response.setEmployeeId(findEmployeeIdByUser(user));
         response.setUsername(user.getUsername());
         response.setNickname(user.getNickname());
         response.setRoleCode(roleCode);
@@ -138,6 +144,18 @@ public class AuthService {
         response.setAvatar(user.getAvatar());
         response.setIsFirstLogin(user.getIsFirstLogin() != null && user.getIsFirstLogin() == 1);
         return response;
+    }
+
+    private Long findEmployeeIdByUser(SysUser user) {
+        if (user == null) return null;
+        LambdaQueryWrapper<Employee> wrapper = new LambdaQueryWrapper<>();
+        if (user.getEmail() != null) {
+            wrapper.eq(Employee::getEmail, user.getEmail());
+        } else if (user.getUsername() != null) {
+            wrapper.eq(Employee::getName, user.getNickname() != null ? user.getNickname() : user.getUsername());
+        }
+        Employee emp = employeeMapper.selectOne(wrapper);
+        return emp != null ? emp.getId() : null;
     }
 
     public LoginResponseDTO refreshToken(String refreshToken) {
@@ -178,6 +196,7 @@ public class AuthService {
         response.setTokenType("Bearer");
         response.setExpiresIn(jwtConfig.getAccessTokenExpire() / 1000);
         response.setUserId(user.getId());
+        response.setEmployeeId(findEmployeeIdByUser(user));
         response.setUsername(user.getUsername());
         response.setNickname(user.getNickname());
         response.setRoleCode(roleCode);
@@ -244,6 +263,7 @@ public class AuthService {
 
         UserInfoDTO dto = new UserInfoDTO();
         dto.setUserId(user.getId());
+        dto.setEmployeeId(findEmployeeIdByUser(user));
         dto.setUsername(user.getUsername());
         dto.setNickname(user.getNickname());
         dto.setEmail(user.getEmail());

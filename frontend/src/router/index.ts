@@ -10,6 +10,8 @@ import AttendanceRecordView from '../views/AttendanceRecordView.vue';
 import AttendanceMakeUpView from '../views/AttendanceMakeUpView.vue';
 import AttendanceApprovalView from '../views/AttendanceApprovalView.vue';
 import AttendanceReportView from '../views/AttendanceReportView.vue';
+import LeaveApplicationView from '../views/LeaveApplicationView.vue';
+import LeaveApprovalView from '../views/LeaveApprovalView.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -79,6 +81,18 @@ const routes: RouteRecordRaw[] = [
     name: 'attendance-reports',
     component: AttendanceReportView,
     meta: { title: '月度报表', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/leave/apply',
+    name: 'leave-apply',
+    component: LeaveApplicationView,
+    meta: { title: '请假申请', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/leave/approval',
+    name: 'leave-approval',
+    component: LeaveApprovalView,
+    meta: { title: '请假审批', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
   },
   {
     path: '/:pathMatch(.*)*',

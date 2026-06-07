@@ -9,6 +9,7 @@ public class LoginResponseDTO {
     private String tokenType;
     private Long expiresIn;
     private Long userId;
+    private Long employeeId;
     private String username;
     private String nickname;
     private String roleCode;

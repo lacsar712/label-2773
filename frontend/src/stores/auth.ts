@@ -20,6 +20,7 @@ interface CaptchaResponse {
 
 interface UserInfo {
   userId: number;
+  employeeId?: number;
   username: string;
   nickname: string;
   email?: string;
@@ -36,6 +37,7 @@ interface LoginResponse {
   tokenType: string;
   expiresIn: number;
   userId: number;
+  employeeId?: number;
   username: string;
   nickname: string;
   roleCode: string;
@@ -85,6 +87,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
       this.userInfo = {
         userId: data.userId,
+        employeeId: data.employeeId,
         username: data.username,
         nickname: data.nickname,
         avatar: data.avatar,
