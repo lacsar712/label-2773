@@ -7,16 +7,30 @@
             <h1 class="page-title">员工管理系统</h1>
             <p class="subtitle">Employee Management System</p>
           </div>
-          <a-button type="primary" class="add-btn" @click="showModal()">
-            <template #icon><plus-outlined /></template>
-            添加员工
-          </a-button>
+          <div class="header-actions">
+            <a-space>
+              <a-tree-select
+                v-model:value="deptFilterId"
+                :tree-data="deptFilterOptions"
+                :field-names="{ label: 'name', value: 'id', children: 'children' }"
+                placeholder="按部门筛选"
+                allow-clear
+                tree-default-expand-all
+                style="width: 240px"
+                @change="handleDeptFilterChange"
+              />
+              <a-button type="primary" class="add-btn" @click="showModal()">
+                <template #icon><plus-outlined /></template>
+                添加员工
+              </a-button>
+            </a-space>
+          </div>
         </div>
 
-        <a-table 
-          :columns="columns" 
-          :data-source="store.employees" 
-          :loading="store.loading" 
+        <a-table
+          :columns="columns"
+          :data-source="employeeStore.filteredEmployees"
+          :loading="employeeStore.loading || deptStore.loading"
           row-key="id"
           :pagination="{ pageSize: 10 }"
           class="modern-table"
@@ -31,7 +45,11 @@
                 <span class="user-name">{{ record.name }}</span>
               </div>
             </template>
-            
+
+            <template v-if="column.key === 'department'">
+              <a-tag color="blue">{{ record.departmentName || '-' }}</a-tag>
+            </template>
+
             <template v-if="column.key === 'role'">
               <a-tag :color="getRoleColor(record.role)">{{ record.role }}</a-tag>
             </template>
@@ -40,10 +58,10 @@
               <a-space size="small">
                 <a-button type="link" class="action-btn edit" @click="showModal(record)">编辑</a-button>
                 <a-divider type="vertical" />
-                <a-popconfirm 
-                  title="确定要删除吗?" 
-                  @confirm="handleDelete(record.id)" 
-                  ok-text="确定" 
+                <a-popconfirm
+                  title="确定要删除吗?"
+                  @confirm="handleDelete(record.id)"
+                  ok-text="确定"
                   cancel-text="取消"
                   placement="topRight"
                 >
@@ -72,8 +90,16 @@
           <a-form-item label="邮箱" name="email" :rules="[{ required: true, message: '请输入邮箱!', type: 'email' }]">
             <a-input v-model:value="formState.email" placeholder="example@company.com" />
           </a-form-item>
-          <a-form-item label="部门" name="department" :rules="[{ required: true, message: '请输入部门!' }]">
-            <a-input v-model:value="formState.department" placeholder="例如：技术部" />
+          <a-form-item label="部门" name="departmentId" :rules="[{ required: true, message: '请选择部门!' }]">
+            <a-tree-select
+              v-model:value="formState.departmentId"
+              :tree-data="deptSelectOptions"
+              :field-names="{ label: 'name', value: 'id', children: 'children' }"
+              placeholder="请选择所属部门"
+              allow-clear
+              tree-default-expand-all
+              style="width: 100%"
+            />
           </a-form-item>
           <a-form-item label="职位" name="role" :rules="[{ required: true, message: '请输入职位!' }]">
             <a-input v-model:value="formState.role" placeholder="例如：高级工程师" />
@@ -85,29 +111,49 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, reactive } from 'vue';
+import { onMounted, ref, reactive, computed } from 'vue';
 import { useEmployeeStore, type Employee } from '../stores/employee';
+import { useDepartmentStore } from '../stores/department';
 import { PlusOutlined } from '@ant-design/icons-vue';
 
-const store = useEmployeeStore();
+const employeeStore = useEmployeeStore();
+const deptStore = useDepartmentStore();
+
 const visible = ref(false);
 const isEdit = ref(false);
 const formRef = ref();
+const deptFilterId = ref<number | null>(null);
 
 const formState = reactive<Employee>({
   name: '',
   email: '',
-  department: '',
+  departmentId: 0 as any,
   role: '',
 });
 
 const columns = [
   { title: '姓名', dataIndex: 'name', key: 'name', width: '20%' },
   { title: '邮箱', dataIndex: 'email', key: 'email', width: '25%' },
-  { title: '部门', dataIndex: 'department', key: 'department', width: '20%' },
+  { title: '部门', dataIndex: 'departmentName', key: 'department', width: '20%' },
   { title: '职位', dataIndex: 'role', key: 'role', width: '20%' },
   { title: '操作', key: 'action', width: '15%', align: 'center' },
 ];
+
+const deptFilterOptions = computed(() => {
+  return [{ id: null as any, name: '全部部门', children: deptStore.departmentsTree }];
+});
+
+const deptSelectOptions = computed(() => {
+  const filterEnabled = (items: any[]): any[] => {
+    return items
+      .filter((d) => d.enabled)
+      .map((d) => ({
+        ...d,
+        children: d.children ? filterEnabled(d.children) : undefined,
+      }));
+  };
+  return filterEnabled(deptStore.departmentsTree);
+});
 
 const getRoleColor = (role: string) => {
   const colors = ['blue', 'cyan', 'green', 'purple', 'geekblue', 'magenta'];
@@ -118,9 +164,22 @@ const getRoleColor = (role: string) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-onMounted(() => {
-  store.fetchEmployees();
+onMounted(async () => {
+  await deptStore.refreshAll();
+  await employeeStore.fetchEmployees();
 });
+
+const handleDeptFilterChange = (value: number | null) => {
+  if (!value) {
+    employeeStore.setDepartmentFilter([]);
+    return;
+  }
+  const descendantIds = deptStore.collectDescendantIds(
+    deptStore.flattenDepartments(deptStore.departmentsTree),
+    value
+  );
+  employeeStore.setDepartmentFilter(descendantIds);
+};
 
 const showModal = (record?: Employee) => {
   if (record) {
@@ -131,7 +190,7 @@ const showModal = (record?: Employee) => {
     formState.id = undefined;
     formState.name = '';
     formState.email = '';
-    formState.department = '';
+    formState.departmentId = 0 as any;
     formState.role = '';
   }
   visible.value = true;
@@ -141,9 +200,9 @@ const handleOk = async () => {
   try {
     await formRef.value.validate();
     if (isEdit.value) {
-      await store.updateEmployee(formState);
+      await employeeStore.updateEmployee(formState);
     } else {
-      await store.createEmployee(formState);
+      await employeeStore.createEmployee(formState);
     }
     visible.value = false;
   } catch (error) {
@@ -152,7 +211,7 @@ const handleOk = async () => {
 };
 
 const handleDelete = async (id: number) => {
-  await store.deleteEmployee(id);
+  await employeeStore.deleteEmployee(id);
 };
 </script>
 
@@ -250,18 +309,26 @@ const handleDelete = async (id: number) => {
   color: #ff4d4f;
 }
 
-/* Responsive Adjustments */
 @media (max-width: 768px) {
   .page-container {
     padding: 20px 16px;
   }
-  
+
   .header-section {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
   }
-  
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .ant-space {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .add-btn {
     width: 100%;
   }

@@ -2,15 +2,15 @@ import { defineStore } from 'pinia';
 import request from '../utils/request';
 import { message } from 'ant-design-vue';
 
-// Set API endpoint (relative to baseURL in request.ts)
 const API_URL = '/employees';
 
 export interface Employee {
   id?: number;
   name: string;
   email: string;
-  department: string;
+  departmentId: number;
   role: string;
+  departmentName?: string;
 }
 
 interface Result<T> {
@@ -23,7 +23,18 @@ export const useEmployeeStore = defineStore('employee', {
   state: () => ({
     employees: [] as Employee[],
     loading: false,
+    filterDepartmentIds: [] as number[],
   }),
+  getters: {
+    filteredEmployees(state): Employee[] {
+      if (!state.filterDepartmentIds.length) {
+        return state.employees;
+      }
+      return state.employees.filter((e) =>
+        state.filterDepartmentIds.includes(e.departmentId)
+      );
+    },
+  },
   actions: {
     async fetchEmployees() {
       this.loading = true;
@@ -36,13 +47,16 @@ export const useEmployeeStore = defineStore('employee', {
         this.loading = false;
       }
     },
+    setDepartmentFilter(departmentIds: number[]) {
+      this.filterDepartmentIds = departmentIds;
+    },
     async createEmployee(employee: Employee) {
       try {
         await request.post<any, Result<boolean>>(API_URL, employee);
-        message.success('创建成功'); // Keep success message here or move to interceptor? Usually keep distinct success messages in business logic.
+        message.success('创建成功');
         await this.fetchEmployees();
       } catch (error) {
-         // Error handled by interceptor
+        // Error handled by interceptor
       }
     },
     async updateEmployee(employee: Employee) {
