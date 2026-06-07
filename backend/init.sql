@@ -481,3 +481,97 @@ SELECT e.id, e.name, 1,
 FROM employee e WHERE e.status IN (1, 2, 3)
 ON DUPLICATE KEY UPDATE remaining_days = VALUES(remaining_days);
 
+-- ==================== 薪资模块 ====================
+
+-- 薪资模板表
+CREATE TABLE IF NOT EXISTS salary_template (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    template_name VARCHAR(100) NOT NULL COMMENT '模板名称',
+    job_level VARCHAR(50) NOT NULL COMMENT '适用职级',
+    base_salary DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '基本工资',
+    post_allowance DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '岗位津贴',
+    performance_coefficient DECIMAL(5,2) NOT NULL DEFAULT 1.00 COMMENT '绩效系数',
+    performance_bonus DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '绩效奖金',
+    social_insurance_personal_rate DECIMAL(5,4) NOT NULL DEFAULT 0.1050 COMMENT '社保个人比例(养老8%+医疗2%+失业0.5%)',
+    social_insurance_company_rate DECIMAL(5,4) NOT NULL DEFAULT 0.2716 COMMENT '社保公司比例(养老16%+医疗9.5%+失业0.5%+工伤0.16%+生育1%)',
+    housing_fund_personal_rate DECIMAL(5,4) NOT NULL DEFAULT 0.0700 COMMENT '公积金个人比例',
+    housing_fund_company_rate DECIMAL(5,4) NOT NULL DEFAULT 0.0700 COMMENT '公积金公司比例',
+    social_insurance_base DECIMAL(12,2) DEFAULT NULL COMMENT '社保公积金基数(NULL表示按基本工资)',
+    description VARCHAR(500) DEFAULT NULL COMMENT '备注说明',
+    enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_job_level (job_level),
+    INDEX idx_enabled (enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='薪资模板表';
+
+-- 薪资记录表
+CREATE TABLE IF NOT EXISTS salary_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    record_no VARCHAR(50) NOT NULL UNIQUE COMMENT '薪资单编号',
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    employee_name VARCHAR(100) DEFAULT NULL COMMENT '员工姓名',
+    department_id BIGINT DEFAULT NULL COMMENT '部门ID',
+    department_name VARCHAR(100) DEFAULT NULL COMMENT '部门名称',
+    job_level VARCHAR(50) DEFAULT NULL COMMENT '职级',
+    template_id BIGINT DEFAULT NULL COMMENT '套用的薪资模板ID',
+    salary_year INT NOT NULL COMMENT '薪资年份',
+    salary_month INT NOT NULL COMMENT '薪资月份',
+    base_salary DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '基本工资',
+    post_allowance DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '岗位津贴',
+    performance_coefficient DECIMAL(5,2) NOT NULL DEFAULT 1.00 COMMENT '绩效系数',
+    performance_bonus DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '绩效奖金',
+    overtime_pay DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '加班费',
+    other_allowance DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '其他补贴',
+    social_insurance_personal DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '社保个人部分',
+    social_insurance_company DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '社保公司部分',
+    housing_fund_personal DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '公积金个人部分',
+    housing_fund_company DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '公积金公司部分',
+    income_tax DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '个人所得税',
+    other_deduction DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '其他扣款',
+    gross_salary DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '应发合计(税前)',
+    total_deduction DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '扣款合计(个人部分+税)',
+    net_salary DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '实发金额',
+    total_company_cost DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '公司总成本(应发+公司社保+公司公积金)',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-草稿，1-已确认，2-已发放',
+    issue_time DATETIME DEFAULT NULL COMMENT '发放时间',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_employee_month (employee_id, salary_year, salary_month),
+    INDEX idx_department (department_id),
+    INDEX idx_year_month (salary_year, salary_month),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='薪资记录表';
+
+-- 薪资调整留痕表
+CREATE TABLE IF NOT EXISTS salary_adjust_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    salary_record_id BIGINT NOT NULL COMMENT '薪资记录ID',
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    employee_name VARCHAR(100) DEFAULT NULL COMMENT '员工姓名',
+    field_name VARCHAR(50) NOT NULL COMMENT '调整字段名',
+    field_label VARCHAR(100) NOT NULL COMMENT '调整字段标签',
+    old_value DECIMAL(12,2) DEFAULT NULL COMMENT '调整前值',
+    new_value DECIMAL(12,2) DEFAULT NULL COMMENT '调整后值',
+    adjust_reason VARCHAR(500) DEFAULT NULL COMMENT '调整原因',
+    operator_id BIGINT DEFAULT NULL COMMENT '操作人ID',
+    operator_name VARCHAR(100) DEFAULT NULL COMMENT '操作人姓名',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    INDEX idx_salary_record (salary_record_id),
+    INDEX idx_employee (employee_id),
+    INDEX idx_operator (operator_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='薪资调整留痕表';
+
+-- 初始化薪资模板示例数据
+INSERT INTO salary_template (template_name, job_level, base_salary, post_allowance, performance_coefficient, performance_bonus, description, enabled) VALUES
+('初级工程师模板', 'P4', 12000.00, 1500.00, 1.00, 2000.00, '适用于初级工程师职级', 1),
+('中级工程师模板', 'P5', 18000.00, 2500.00, 1.00, 4000.00, '适用于中级工程师职级', 1),
+('高级工程师模板', 'P6', 28000.00, 4000.00, 1.00, 8000.00, '适用于高级工程师职级', 1),
+('专家模板', 'P7', 40000.00, 6000.00, 1.00, 15000.00, '适用于专家/架构师职级', 1),
+('产品经理初级模板', 'P4', 13000.00, 1500.00, 1.00, 2500.00, '适用于初级产品经理', 1),
+('产品经理高级模板', 'P6', 30000.00, 4500.00, 1.00, 9000.00, '适用于高级产品经理', 1),
+('设计师模板', 'P5', 16000.00, 2000.00, 1.00, 3500.00, '适用于设计师职级', 1),
+('市场专员模板', 'P4', 10000.00, 1200.00, 1.00, 1800.00, '适用于市场专员职级', 1),
+('管理层模板', 'M2', 50000.00, 10000.00, 1.00, 20000.00, '适用于部门总监级', 1);
+

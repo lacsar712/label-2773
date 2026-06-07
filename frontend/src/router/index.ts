@@ -12,6 +12,10 @@ import AttendanceApprovalView from '../views/AttendanceApprovalView.vue';
 import AttendanceReportView from '../views/AttendanceReportView.vue';
 import LeaveApplicationView from '../views/LeaveApplicationView.vue';
 import LeaveApprovalView from '../views/LeaveApprovalView.vue';
+import SalaryRecordView from '../views/SalaryRecordView.vue';
+import SalaryTemplateView from '../views/SalaryTemplateView.vue';
+import MySalaryView from '../views/MySalaryView.vue';
+import SalaryReportView from '../views/SalaryReportView.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -93,6 +97,30 @@ const routes: RouteRecordRaw[] = [
     name: 'leave-approval',
     component: LeaveApprovalView,
     meta: { title: '请假审批', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/salary/manage',
+    name: 'salary-manage',
+    component: SalaryRecordView,
+    meta: { title: '薪资管理', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/salary/templates',
+    name: 'salary-templates',
+    component: SalaryTemplateView,
+    meta: { title: '薪资模板', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/salary/my',
+    name: 'salary-my',
+    component: MySalaryView,
+    meta: { title: '我的薪资', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/salary/report',
+    name: 'salary-report',
+    component: SalaryReportView,
+    meta: { title: '人力成本报表', requiresAuth: true, roles: ['ADMIN', 'HR'] },
   },
   {
     path: '/:pathMatch(.*)*',
