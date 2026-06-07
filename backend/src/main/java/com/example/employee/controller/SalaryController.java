@@ -1,7 +1,10 @@
 package com.example.employee.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.employee.annotation.AuditLog;
+import com.example.employee.common.OperationType;
 import com.example.employee.common.Result;
+import com.example.employee.common.TargetModule;
 import com.example.employee.context.UserContext;
 import com.example.employee.dto.*;
 import com.example.employee.entity.SalaryRecord;
@@ -54,18 +57,21 @@ public class SalaryController {
 
     @PostMapping("/template")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.CREATE, recordNameField = "templateName")
     public Result<SalaryTemplate> createTemplate(@RequestBody @Valid SalaryTemplate template) {
         return Result.success(salaryTemplateService.createTemplate(template));
     }
 
     @PutMapping("/template")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.UPDATE, recordNameField = "templateName")
     public Result<SalaryTemplate> updateTemplate(@RequestBody @Valid SalaryTemplate template) {
         return Result.success(salaryTemplateService.updateTemplate(template));
     }
 
     @PostMapping("/template/toggle/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.UPDATE)
     public Result<Void> toggleTemplate(@PathVariable Long id) {
         salaryTemplateService.toggleEnabled(id);
         return Result.success(null);
@@ -75,12 +81,14 @@ public class SalaryController {
 
     @PostMapping("/batch-generate")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.CREATE)
     public Result<List<SalaryRecord>> batchGenerate(@RequestBody @Valid SalaryBatchGenerateDTO dto) {
         return Result.success(salaryRecordService.batchGenerate(dto));
     }
 
     @PostMapping("/apply-template")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.UPDATE)
     public Result<Void> applyTemplate(@RequestBody @Valid SalaryTemplateApplyDTO dto) {
         salaryRecordService.applyTemplate(dto);
         return Result.success(null);
@@ -100,6 +108,7 @@ public class SalaryController {
 
     @PostMapping("/adjust")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.UPDATE, recordNameField = "employeeName")
     public Result<SalaryRecord> adjustField(@RequestBody @Valid SalaryAdjustDTO dto) {
         UserInfoDTO user = UserContext.getCurrentUser();
         Long operatorId = user != null ? user.getUserId() : null;
@@ -109,24 +118,28 @@ public class SalaryController {
 
     @PostMapping("/confirm/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.UPDATE)
     public Result<SalaryRecord> confirmRecord(@PathVariable Long id) {
         return Result.success(salaryRecordService.confirmRecord(id));
     }
 
     @PostMapping("/batch-confirm")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.UPDATE)
     public Result<List<SalaryRecord>> batchConfirm(@RequestBody List<Long> ids) {
         return Result.success(salaryRecordService.batchConfirm(ids));
     }
 
     @PostMapping("/issue/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.UPDATE)
     public Result<SalaryRecord> issueRecord(@PathVariable Long id) {
         return Result.success(salaryRecordService.issueRecord(id));
     }
 
     @PostMapping("/batch-issue")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @AuditLog(module = TargetModule.SALARY, operation = OperationType.UPDATE)
     public Result<List<SalaryRecord>> batchIssue(@RequestBody List<Long> ids) {
         return Result.success(salaryRecordService.batchIssue(ids));
     }

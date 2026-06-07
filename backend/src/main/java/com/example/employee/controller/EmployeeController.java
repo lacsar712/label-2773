@@ -1,6 +1,9 @@
 package com.example.employee.controller;
 
+import com.example.employee.annotation.AuditLog;
+import com.example.employee.common.OperationType;
 import com.example.employee.common.Result;
+import com.example.employee.common.TargetModule;
 import com.example.employee.entity.Department;
 import com.example.employee.entity.Employee;
 import com.example.employee.service.DepartmentService;
@@ -37,6 +40,7 @@ public class EmployeeController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.EMPLOYEE, operation = OperationType.CREATE, recordNameField = "name")
     public Result<Boolean> create(@RequestBody @Valid Employee employee) {
         validateDepartmentEnabled(employee.getDepartmentId());
         return Result.success(employeeService.save(employee));
@@ -44,6 +48,7 @@ public class EmployeeController {
 
     @PutMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.EMPLOYEE, operation = OperationType.UPDATE, recordNameField = "name")
     public Result<Boolean> update(@RequestBody @Valid Employee employee) {
         validateDepartmentEnabled(employee.getDepartmentId());
         return Result.success(employeeService.updateById(employee));
@@ -51,6 +56,7 @@ public class EmployeeController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.EMPLOYEE, operation = OperationType.DELETE)
     public Result<Boolean> delete(@PathVariable Long id) {
         return Result.success(employeeService.removeById(id));
     }

@@ -1,6 +1,9 @@
 package com.example.employee.controller;
 
+import com.example.employee.annotation.AuditLog;
+import com.example.employee.common.OperationType;
 import com.example.employee.common.Result;
+import com.example.employee.common.TargetModule;
 import com.example.employee.entity.Department;
 import com.example.employee.entity.DepartmentNotification;
 import com.example.employee.service.DepartmentService;
@@ -57,24 +60,28 @@ public class DepartmentController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.CREATE, recordNameField = "name")
     public Result<Boolean> create(@RequestBody @Valid Department department) {
         return Result.success(departmentService.createDepartment(department));
     }
 
     @PutMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.UPDATE, recordNameField = "name")
     public Result<Boolean> update(@RequestBody @Valid Department department) {
         return Result.success(departmentService.updateDepartment(department));
     }
 
     @PutMapping("/{id}/toggle")
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.UPDATE)
     public Result<Boolean> toggleEnabled(@PathVariable Long id, @RequestParam Boolean enabled) {
         return Result.success(departmentService.toggleEnabled(id, enabled));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.DELETE)
     public Result<Boolean> delete(@PathVariable Long id) {
         return Result.success(departmentService.deleteDepartment(id));
     }

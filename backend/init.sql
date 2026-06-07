@@ -575,3 +575,35 @@ INSERT INTO salary_template (template_name, job_level, base_salary, post_allowan
 ('市场专员模板', 'P4', 10000.00, 1200.00, 1.00, 1800.00, '适用于市场专员职级', 1),
 ('管理层模板', 'M2', 50000.00, 10000.00, 1.00, 20000.00, '适用于部门总监级', 1);
 
+-- ==================== 操作审计日志模块 ====================
+
+CREATE TABLE IF NOT EXISTS sys_audit_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    operator_id BIGINT DEFAULT NULL COMMENT '操作人ID',
+    operator_name VARCHAR(100) DEFAULT NULL COMMENT '操作人姓名',
+    operator_username VARCHAR(50) DEFAULT NULL COMMENT '操作人用户名',
+    operator_role_id BIGINT DEFAULT NULL COMMENT '操作人角色ID',
+    operator_role_code VARCHAR(50) DEFAULT NULL COMMENT '操作人角色编码',
+    operator_role_name VARCHAR(100) DEFAULT NULL COMMENT '操作人角色名称',
+    operation_type TINYINT NOT NULL COMMENT '操作类型：1-新增，2-修改，3-删除',
+    target_module VARCHAR(50) NOT NULL COMMENT '目标模块：EMPLOYEE-员工，DEPARTMENT-部门，SALARY-薪资，ATTENDANCE-考勤，LEAVE-请假',
+    target_module_name VARCHAR(100) NOT NULL COMMENT '目标模块名称',
+    target_record_id VARCHAR(100) DEFAULT NULL COMMENT '目标记录ID',
+    target_record_name VARCHAR(200) DEFAULT NULL COMMENT '目标记录名称/描述',
+    before_snapshot JSON DEFAULT NULL COMMENT '变更前JSON快照',
+    after_snapshot JSON DEFAULT NULL COMMENT '变更后JSON快照',
+    request_ip VARCHAR(50) DEFAULT NULL COMMENT '请求IP',
+    user_agent VARCHAR(500) DEFAULT NULL COMMENT '请求User-Agent',
+    browser VARCHAR(100) DEFAULT NULL COMMENT '浏览器',
+    os VARCHAR(100) DEFAULT NULL COMMENT '操作系统',
+    device VARCHAR(100) DEFAULT NULL COMMENT '设备信息',
+    operation_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    archived TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已归档：0-否，1-是',
+    INDEX idx_operator (operator_id),
+    INDEX idx_operation_type (operation_type),
+    INDEX idx_target_module (target_module),
+    INDEX idx_target_record (target_record_id),
+    INDEX idx_operation_time (operation_time),
+    INDEX idx_archived (archived)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作审计日志表';
+
