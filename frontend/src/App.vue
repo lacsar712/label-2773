@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
-import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined } from '@ant-design/icons-vue';
+import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined } from '@ant-design/icons-vue';
 import { Dropdown, Modal, message } from 'ant-design-vue';
 import { useAuthStore } from './stores/auth';
 
@@ -27,6 +27,24 @@ const menuItems = computed(() => {
       roles: ['ADMIN', 'HR', 'EMPLOYEE'],
     },
   ];
+  items.push({
+    key: '/attendance',
+    icon: ClockCircleOutlined,
+    label: '考勤打卡',
+    roles: ['ADMIN', 'HR', 'EMPLOYEE'],
+  });
+  items.push({
+    key: '/attendance/records',
+    icon: CalendarOutlined,
+    label: '考勤记录',
+    roles: ['ADMIN', 'HR', 'EMPLOYEE'],
+  });
+  items.push({
+    key: '/attendance/makeup',
+    icon: FormOutlined,
+    label: '补卡申请',
+    roles: ['ADMIN', 'HR', 'EMPLOYEE'],
+  });
   if (authStore.hasRole(['ADMIN', 'HR'])) {
     items.push({
       key: '/employees',
@@ -37,6 +55,16 @@ const menuItems = computed(() => {
       key: '/departments',
       icon: TeamOutlined,
       label: '部门管理',
+    });
+    items.push({
+      key: '/attendance/approval',
+      icon: AuditOutlined,
+      label: '补卡审批',
+    });
+    items.push({
+      key: '/attendance/reports',
+      icon: BarChartOutlined,
+      label: '月度报表',
     });
   }
   return items;

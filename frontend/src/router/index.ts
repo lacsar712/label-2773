@@ -5,6 +5,11 @@ import EmployeeView from '../views/EmployeeView.vue';
 import DepartmentView from '../views/DepartmentView.vue';
 import LoginView from '../views/LoginView.vue';
 import ChangePasswordView from '../views/ChangePasswordView.vue';
+import AttendanceView from '../views/AttendanceView.vue';
+import AttendanceRecordView from '../views/AttendanceRecordView.vue';
+import AttendanceMakeUpView from '../views/AttendanceMakeUpView.vue';
+import AttendanceApprovalView from '../views/AttendanceApprovalView.vue';
+import AttendanceReportView from '../views/AttendanceReportView.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -44,6 +49,36 @@ const routes: RouteRecordRaw[] = [
     name: 'departments',
     component: DepartmentView,
     meta: { title: '部门管理', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/attendance',
+    name: 'attendance',
+    component: AttendanceView,
+    meta: { title: '考勤打卡', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/attendance/records',
+    name: 'attendance-records',
+    component: AttendanceRecordView,
+    meta: { title: '考勤记录', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/attendance/makeup',
+    name: 'attendance-makeup',
+    component: AttendanceMakeUpView,
+    meta: { title: '补卡申请', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/attendance/approval',
+    name: 'attendance-approval',
+    component: AttendanceApprovalView,
+    meta: { title: '补卡审批', requiresAuth: true, roles: ['ADMIN', 'HR'] },
+  },
+  {
+    path: '/attendance/reports',
+    name: 'attendance-reports',
+    component: AttendanceReportView,
+    meta: { title: '月度报表', requiresAuth: true, roles: ['ADMIN', 'HR'] },
   },
   {
     path: '/:pathMatch(.*)*',

@@ -159,3 +159,159 @@ INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_f
 -- 插入测试普通员工账号（用户名: employee, 密码: emp123456）
 INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
 ('employee', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '普通员工', 'employee@example.com', 3, 1, 1);
+
+-- ==================== 考勤模块 ====================
+
+-- 考勤规则表
+CREATE TABLE IF NOT EXISTS attendance_rule (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    rule_name VARCHAR(100) NOT NULL COMMENT '规则名称',
+    rule_type TINYINT NOT NULL DEFAULT 1 COMMENT '规则类型：1-标准工时，2-弹性工时',
+    work_start_time TIME NOT NULL COMMENT '上班时间',
+    work_end_time TIME NOT NULL COMMENT '下班时间',
+    flex_start_time TIME DEFAULT NULL COMMENT '弹性上班开始时间（弹性工时有效）',
+    flex_end_time TIME DEFAULT NULL COMMENT '弹性上班结束时间（弹性工时有效）',
+    work_minutes INT NOT NULL DEFAULT 480 COMMENT '要求工作时长（分钟），弹性工时有效',
+    late_grace_minutes INT NOT NULL DEFAULT 0 COMMENT '迟到宽限分钟数',
+    early_grace_minutes INT NOT NULL DEFAULT 0 COMMENT '早退宽限分钟数',
+    allowed_ip_ranges VARCHAR(1000) DEFAULT NULL COMMENT '允许打卡的IP范围（逗号分隔，如192.168.1.0/24,10.0.0.0/8）',
+    allowed_gps_radius INT DEFAULT 500 COMMENT '允许打卡GPS半径（米）',
+    work_location_name VARCHAR(200) DEFAULT NULL COMMENT '工作地点名称',
+    work_location_lng DECIMAL(10, 7) DEFAULT NULL COMMENT '工作地点经度',
+    work_location_lat DECIMAL(10, 7) DEFAULT NULL COMMENT '工作地点纬度',
+    enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '启用状态',
+    is_default TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否默认规则',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_enabled (enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='考勤规则表';
+
+-- 员工考勤规则关联表
+CREATE TABLE IF NOT EXISTS employee_attendance_rule (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    rule_id BIGINT NOT NULL COMMENT '考勤规则ID',
+    effective_date DATE NOT NULL COMMENT '生效日期',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    UNIQUE KEY uk_employee_date (employee_id, effective_date),
+    INDEX idx_rule_id (rule_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工考勤规则关联表';
+
+-- 考勤打卡记录表
+CREATE TABLE IF NOT EXISTS attendance_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    attendance_date DATE NOT NULL COMMENT '考勤日期',
+    check_in_time DATETIME DEFAULT NULL COMMENT '上班打卡时间',
+    check_out_time DATETIME DEFAULT NULL COMMENT '下班打卡时间',
+    check_in_ip VARCHAR(50) DEFAULT NULL COMMENT '上班打卡IP',
+    check_out_ip VARCHAR(50) DEFAULT NULL COMMENT '下班打卡IP',
+    check_in_location VARCHAR(200) DEFAULT NULL COMMENT '上班打卡地点',
+    check_out_location VARCHAR(200) DEFAULT NULL COMMENT '下班打卡地点',
+    check_in_lng DECIMAL(10, 7) DEFAULT NULL COMMENT '上班打卡经度',
+    check_in_lat DECIMAL(10, 7) DEFAULT NULL COMMENT '上班打卡纬度',
+    check_out_lng DECIMAL(10, 7) DEFAULT NULL COMMENT '下班打卡经度',
+    check_out_lat DECIMAL(10, 7) DEFAULT NULL COMMENT '下班打卡纬度',
+    check_in_type TINYINT DEFAULT 1 COMMENT '上班打卡来源：1-正常打卡，2-补卡',
+    check_out_type TINYINT DEFAULT 1 COMMENT '下班打卡来源：1-正常打卡，2-补卡',
+    makeup_in_id BIGINT DEFAULT NULL COMMENT '上班补卡申请ID',
+    makeup_out_id BIGINT DEFAULT NULL COMMENT '下班补卡申请ID',
+    work_minutes INT DEFAULT 0 COMMENT '实际工作时长（分钟）',
+    late_minutes INT DEFAULT 0 COMMENT '迟到分钟数',
+    early_minutes INT DEFAULT 0 COMMENT '早退分钟数',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-正常，1-迟到，2-早退，3-缺卡，4-迟到且早退，5-请假，6-出差',
+    exception_flag TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否异常：1-是，0-否',
+    rule_id BIGINT DEFAULT NULL COMMENT '应用的考勤规则ID',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_employee_date (employee_id, attendance_date),
+    INDEX idx_attendance_date (attendance_date),
+    INDEX idx_status (status),
+    INDEX idx_exception (exception_flag)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='考勤打卡记录表';
+
+-- 补卡申请表
+CREATE TABLE IF NOT EXISTS attendance_makeup (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id BIGINT NOT NULL COMMENT '申请人ID',
+    employee_name VARCHAR(100) DEFAULT NULL COMMENT '申请人姓名',
+    department_id BIGINT DEFAULT NULL COMMENT '部门ID',
+    attendance_date DATE NOT NULL COMMENT '补卡日期',
+    makeup_type TINYINT NOT NULL COMMENT '补卡类型：1-上班补卡，2-下班补卡',
+    makeup_time DATETIME NOT NULL COMMENT '补卡时间',
+    ip_address VARCHAR(50) DEFAULT NULL COMMENT '打卡IP',
+    location VARCHAR(200) DEFAULT NULL COMMENT '打卡地点',
+    lng DECIMAL(10, 7) DEFAULT NULL COMMENT '经度',
+    lat DECIMAL(10, 7) DEFAULT NULL COMMENT '纬度',
+    reason VARCHAR(500) NOT NULL COMMENT '补卡原因',
+    approver_id BIGINT DEFAULT NULL COMMENT '审批人ID',
+    approver_name VARCHAR(100) DEFAULT NULL COMMENT '审批人姓名',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-待审批，1-已通过，2-已拒绝',
+    approval_time DATETIME DEFAULT NULL COMMENT '审批时间',
+    approval_remark VARCHAR(500) DEFAULT NULL COMMENT '审批意见',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_employee_id (employee_id),
+    INDEX idx_approver_id (approver_id),
+    INDEX idx_status (status),
+    INDEX idx_attendance_date (attendance_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='补卡申请表';
+
+-- 考勤异常记录表
+CREATE TABLE IF NOT EXISTS attendance_exception (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    employee_name VARCHAR(100) DEFAULT NULL COMMENT '员工姓名',
+    department_id BIGINT DEFAULT NULL COMMENT '部门ID',
+    attendance_date DATE NOT NULL COMMENT '考勤日期',
+    exception_type TINYINT NOT NULL COMMENT '异常类型：1-迟到，2-早退，3-缺卡，4-迟到且早退',
+    late_minutes INT DEFAULT 0 COMMENT '迟到分钟数',
+    early_minutes INT DEFAULT 0 COMMENT '早退分钟数',
+    record_id BIGINT DEFAULT NULL COMMENT '关联打卡记录ID',
+    salary_deduction DECIMAL(10, 2) DEFAULT 0 COMMENT '薪资扣款金额（预留）',
+    deduction_rule_id BIGINT DEFAULT NULL COMMENT '扣款规则ID（预留）',
+    handled TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已处理：1-是，0-否',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_employee_id (employee_id),
+    INDEX idx_attendance_date (attendance_date),
+    INDEX idx_exception_type (exception_type),
+    INDEX idx_handled (handled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='考勤异常记录表';
+
+-- 月度考勤汇总表
+CREATE TABLE IF NOT EXISTS attendance_monthly (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    employee_name VARCHAR(100) DEFAULT NULL COMMENT '员工姓名',
+    department_id BIGINT DEFAULT NULL COMMENT '部门ID',
+    department_name VARCHAR(100) DEFAULT NULL COMMENT '部门名称',
+    stat_year INT NOT NULL COMMENT '统计年份',
+    stat_month INT NOT NULL COMMENT '统计月份',
+    work_days INT NOT NULL DEFAULT 0 COMMENT '应出勤天数',
+    actual_days INT NOT NULL DEFAULT 0 COMMENT '实际出勤天数',
+    late_count INT NOT NULL DEFAULT 0 COMMENT '迟到次数',
+    early_count INT NOT NULL DEFAULT 0 COMMENT '早退次数',
+    absent_count INT NOT NULL DEFAULT 0 COMMENT '缺卡次数',
+    exception_count INT NOT NULL DEFAULT 0 COMMENT '异常次数',
+    total_work_minutes BIGINT NOT NULL DEFAULT 0 COMMENT '总工作时长（分钟）',
+    total_late_minutes INT NOT NULL DEFAULT 0 COMMENT '总迟到分钟数',
+    total_early_minutes INT NOT NULL DEFAULT 0 COMMENT '总早退分钟数',
+    exception_rate DECIMAL(5, 2) NOT NULL DEFAULT 0 COMMENT '异常率(%)',
+    salary_deduction DECIMAL(10, 2) DEFAULT 0 COMMENT '薪资扣款总额（预留）',
+    leave_days INT NOT NULL DEFAULT 0 COMMENT '请假天数',
+    business_trip_days INT NOT NULL DEFAULT 0 COMMENT '出差天数',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_employee_month (employee_id, stat_year, stat_month),
+    INDEX idx_department (department_id),
+    INDEX idx_year_month (stat_year, stat_month)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='月度考勤汇总表';
+
+-- 初始化默认考勤规则
+INSERT INTO attendance_rule (rule_name, rule_type, work_start_time, work_end_time, flex_start_time, flex_end_time, work_minutes, late_grace_minutes, early_grace_minutes, work_location_name, is_default, enabled) VALUES
+('标准工时（9:00-18:00）', 1, '09:00:00', '18:00:00', NULL, NULL, 480, 5, 5, '公司总部', 1, 1),
+('弹性工时（核心10:00-16:00）', 2, '10:00:00', '16:00:00', '07:00:00', '20:00:00', 480, 5, 5, '公司总部', 0, 1);
+
