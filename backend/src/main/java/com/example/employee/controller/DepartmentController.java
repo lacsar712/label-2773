@@ -4,9 +4,18 @@ import com.example.employee.annotation.AuditLog;
 import com.example.employee.common.OperationType;
 import com.example.employee.common.Result;
 import com.example.employee.common.TargetModule;
+import com.example.employee.context.UserContext;
+import com.example.employee.dto.CreateSnapshotDTO;
+import com.example.employee.dto.DepartmentDetailDTO;
+import com.example.employee.dto.DepartmentMoveDTO;
+import com.example.employee.dto.TreeStateDTO;
+import com.example.employee.dto.UserInfoDTO;
 import com.example.employee.entity.Department;
 import com.example.employee.entity.DepartmentNotification;
+import com.example.employee.entity.DepartmentVersionSnapshot;
 import com.example.employee.service.DepartmentService;
+import com.example.employee.service.DepartmentVersionSnapshotService;
+import com.example.employee.service.UserTreeStateService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +30,12 @@ public class DepartmentController {
 
     @Autowired
     private DepartmentService departmentService;
+
+    @Autowired
+    private DepartmentVersionSnapshotService snapshotService;
+
+    @Autowired
+    private UserTreeStateService treeStateService;
 
     @GetMapping("/tree")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
@@ -44,6 +59,12 @@ public class DepartmentController {
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public Result<Department> getById(@PathVariable Long id) {
         return Result.success(departmentService.getDetail(id));
+    }
+
+    @GetMapping("/{id}/detail")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    public Result<DepartmentDetailDTO> getFullDetail(@PathVariable Long id) {
+        return Result.success(departmentService.getDepartmentFullDetail(id));
     }
 
     @GetMapping("/search")
@@ -72,6 +93,13 @@ public class DepartmentController {
         return Result.success(departmentService.updateDepartment(department));
     }
 
+    @PutMapping("/move")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.UPDATE)
+    public Result<Boolean> move(@RequestBody @Valid DepartmentMoveDTO dto) {
+        return Result.success(departmentService.moveDepartment(dto.getDeptId(), dto.getTargetParentId()));
+    }
+
     @PutMapping("/{id}/toggle")
     @PreAuthorize("hasRole('ADMIN')")
     @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.UPDATE)
@@ -90,5 +118,60 @@ public class DepartmentController {
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public Result<List<DepartmentNotification>> getNotifications() {
         return Result.success(departmentService.listNotifications());
+    }
+
+    @GetMapping("/snapshots")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    public Result<List<DepartmentVersionSnapshot>> listSnapshots() {
+        return Result.success(snapshotService.listAll());
+    }
+
+    @PostMapping("/snapshots")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.CREATE)
+    public Result<DepartmentVersionSnapshot> createSnapshot(@RequestBody @Valid CreateSnapshotDTO dto) {
+        UserInfoDTO user = UserContext.getCurrentUser();
+        return Result.success(snapshotService.createSnapshot(dto,
+                user != null ? user.getUserId() : null,
+                user != null ? user.getNickname() : null));
+    }
+
+    @GetMapping("/snapshots/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    public Result<DepartmentVersionSnapshot> getSnapshot(@PathVariable Long id) {
+        return Result.success(snapshotService.getSnapshot(id));
+    }
+
+    @GetMapping("/snapshots/{id}/restore")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    public Result<List<Department>> restoreSnapshot(@PathVariable Long id) {
+        return Result.success(snapshotService.restoreSnapshot(id));
+    }
+
+    @DeleteMapping("/snapshots/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.DELETE)
+    public Result<Boolean> deleteSnapshot(@PathVariable Long id) {
+        return Result.success(snapshotService.deleteSnapshot(id));
+    }
+
+    @GetMapping("/tree-state")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
+    public Result<TreeStateDTO> getTreeState(@RequestParam(defaultValue = "department") String treeKey) {
+        UserInfoDTO user = UserContext.getCurrentUser();
+        if (user == null) {
+            return Result.success(new TreeStateDTO());
+        }
+        return Result.success(treeStateService.getTreeState(user.getUserId(), treeKey));
+    }
+
+    @PostMapping("/tree-state")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
+    public Result<Boolean> saveTreeState(@RequestBody TreeStateDTO dto) {
+        UserInfoDTO user = UserContext.getCurrentUser();
+        if (user == null) {
+            return Result.success(false);
+        }
+        return Result.success(treeStateService.saveTreeState(user.getUserId(), dto));
     }
 }

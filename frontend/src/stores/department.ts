@@ -10,12 +10,18 @@ export interface Department {
   code: string;
   description?: string;
   leader?: string;
+  deputyLeader?: string;
   parentId?: number | null;
   headcountLimit: number;
+  levelType?: number;
   enabled: boolean;
+  createTime?: string;
+  updateTime?: string;
   children?: Department[];
   employeeCount?: number;
+  activeEmployeeCount?: number;
   overHeadcount?: boolean;
+  parentName?: string;
 }
 
 export interface DepartmentNotification {
@@ -26,6 +32,43 @@ export interface DepartmentNotification {
   newLeader?: string;
   content: string;
   createTime: string;
+}
+
+export interface LeaderChangeHistory {
+  id: number;
+  departmentId: number;
+  departmentName: string;
+  changeType: number;
+  oldLeader?: string;
+  newLeader?: string;
+  operatorId?: number;
+  operatorName?: string;
+  remark?: string;
+  createTime: string;
+}
+
+export interface VersionSnapshot {
+  id: number;
+  snapshotName: string;
+  snapshotType: number;
+  treeSnapshot: string;
+  description?: string;
+  operatorId?: number;
+  operatorName?: string;
+  createTime: string;
+}
+
+export interface TreeState {
+  treeKey: string;
+  expandedIds: number[];
+  selectedId?: number;
+}
+
+export interface DepartmentDetail {
+  department: Department;
+  activeEmployees: any[];
+  subDepartments: Department[];
+  leaderChangeHistory: LeaderChangeHistory[];
 }
 
 interface Result<T> {
@@ -41,6 +84,9 @@ export const useDepartmentStore = defineStore('department', {
     enabledDepartments: [] as Department[],
     loading: false,
     notifications: [] as DepartmentNotification[],
+    currentDetail: null as DepartmentDetail | null,
+    snapshots: [] as VersionSnapshot[],
+    treeState: { treeKey: 'department', expandedIds: [], selectedId: undefined } as TreeState,
   }),
   actions: {
     async fetchDepartmentsTree() {
@@ -85,6 +131,11 @@ export const useDepartmentStore = defineStore('department', {
       const res = await request.get<any, Result<Department>>(`${API_URL}/${id}`);
       return res.data;
     },
+    async getDepartmentDetail(id: number): Promise<DepartmentDetail> {
+      const res = await request.get<any, Result<DepartmentDetail>>(`${API_URL}/${id}/detail`);
+      this.currentDetail = res.data;
+      return res.data;
+    },
     async createDepartment(dept: Department) {
       await request.post<any, Result<boolean>>(API_URL, dept);
       message.success('创建部门成功');
@@ -93,6 +144,17 @@ export const useDepartmentStore = defineStore('department', {
     async updateDepartment(dept: Department) {
       await request.put<any, Result<boolean>>(API_URL, dept);
       message.success('更新部门成功');
+      await this.refreshAll();
+      if (this.currentDetail && this.currentDetail.department.id === dept.id) {
+        await this.getDepartmentDetail(dept.id as number);
+      }
+    },
+    async moveDepartment(deptId: number, targetParentId: number | null) {
+      await request.put<any, Result<boolean>>(`${API_URL}/move`, {
+        deptId,
+        targetParentId: targetParentId || null,
+      });
+      message.success('移动部门成功');
       await this.refreshAll();
     },
     async toggleEnabled(id: number, enabled: boolean) {
@@ -106,6 +168,10 @@ export const useDepartmentStore = defineStore('department', {
       await request.delete<any, Result<boolean>>(`${API_URL}/${id}`);
       message.success('删除部门成功');
       await this.refreshAll();
+      if (this.currentDetail && this.currentDetail.department.id === id) {
+        this.currentDetail = null;
+        this.treeState.selectedId = undefined;
+      }
     },
     async fetchNotifications() {
       try {
@@ -115,6 +181,64 @@ export const useDepartmentStore = defineStore('department', {
         this.notifications = res.data;
       } catch (error) {
         console.error('获取通知失败', error);
+      }
+    },
+    async fetchSnapshots() {
+      try {
+        const res = await request.get<any, Result<VersionSnapshot[]>>(`${API_URL}/snapshots`);
+        this.snapshots = res.data;
+      } catch (error) {
+        console.error('获取快照列表失败', error);
+      }
+    },
+    async createSnapshot(snapshotName: string, description?: string) {
+      const res = await request.post<any, Result<VersionSnapshot>>(`${API_URL}/snapshots`, {
+        snapshotName,
+        description,
+      });
+      message.success('创建快照成功');
+      await this.fetchSnapshots();
+      return res.data;
+    },
+    async getSnapshot(id: number): Promise<VersionSnapshot> {
+      const res = await request.get<any, Result<VersionSnapshot>>(`${API_URL}/snapshots/${id}`);
+      return res.data;
+    },
+    async restoreSnapshot(id: number): Promise<Department[]> {
+      const res = await request.get<any, Result<Department[]>>(`${API_URL}/snapshots/${id}/restore`);
+      return res.data;
+    },
+    async deleteSnapshot(id: number) {
+      await request.delete<any, Result<boolean>>(`${API_URL}/snapshots/${id}`);
+      message.success('删除快照成功');
+      await this.fetchSnapshots();
+    },
+    async fetchTreeState(treeKey: string = 'department') {
+      try {
+        const res = await request.get<any, Result<TreeState>>(`${API_URL}/tree-state`, {
+          params: { treeKey },
+        });
+        if (res.data) {
+          this.treeState = {
+            treeKey: res.data.treeKey || treeKey,
+            expandedIds: res.data.expandedIds || [],
+            selectedId: res.data.selectedId,
+          };
+        }
+      } catch (error) {
+        console.error('获取树状态失败', error);
+      }
+    },
+    async saveTreeState(expandedIds: number[], selectedId?: number, treeKey: string = 'department') {
+      try {
+        this.treeState = { treeKey, expandedIds, selectedId };
+        await request.post<any, Result<boolean>>(`${API_URL}/tree-state`, {
+          treeKey,
+          expandedIds,
+          selectedId,
+        });
+      } catch (error) {
+        console.error('保存树状态失败', error);
       }
     },
     async refreshAll() {
@@ -142,11 +266,6 @@ export const useDepartmentStore = defineStore('department', {
       const all = this.flattenDepartments(this.departmentsTree);
       const dept = all.find((d) => d.id === id);
       return dept ? dept.name : '';
-    },
-    filterDepartmentsByParent(departments: Department[], parentId?: number | null): Department[] {
-      if (!parentId) return departments;
-      const allDescendantIds = this.collectDescendantIds(departments, parentId);
-      return departments.filter((d) => allDescendantIds.includes(d.id as number));
     },
     collectDescendantIds(departments: Department[], parentId: number): number[] {
       const ids: number[] = [parentId];

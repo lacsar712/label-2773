@@ -10,9 +10,13 @@ CREATE TABLE IF NOT EXISTS department (
     code VARCHAR(50) NOT NULL UNIQUE COMMENT '部门编码',
     description VARCHAR(500) DEFAULT NULL COMMENT '部门描述',
     leader VARCHAR(100) DEFAULT NULL COMMENT '负责人',
+    deputy_leader VARCHAR(100) DEFAULT NULL COMMENT '副负责人',
     parent_id BIGINT DEFAULT NULL COMMENT '上级部门ID',
     headcount_limit INT NOT NULL DEFAULT 10 COMMENT '编制人数上限',
+    level_type TINYINT DEFAULT NULL COMMENT '层级类型：1-公司，2-事业部，3-小组，4-项目组',
     enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '启用状态：1-启用，0-停用',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_parent_id (parent_id),
     INDEX idx_code (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门表';
@@ -44,18 +48,20 @@ CREATE TABLE IF NOT EXISTS employee (
     INDEX idx_leave_date (leave_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO department (name, code, description, leader, parent_id, headcount_limit, enabled) VALUES
-('集团总部', 'HQ', '集团总部', '张总', NULL, 50, 1),
-('技术中心', 'TECH', '技术研发中心', '李技术长', 1, 100, 1),
-('产品中心', 'PROD', '产品设计中心', '王产品', 1, 50, 1),
-('市场中心', 'MKT', '市场营销中心', '赵市场', 1, 30, 1),
-('后端开发部', 'TECH-BE', '后端开发部门', '孙后端', 2, 30, 1),
-('前端开发部', 'TECH-FE', '前端开发部门', '周前端', 2, 25, 1),
-('测试部', 'TECH-QA', '质量测试部门', '吴测试', 2, 15, 1),
-('产品设计部', 'PROD-PD', '产品设计部门', '郑产品', 3, 20, 1),
-('UI设计部', 'PROD-UI', 'UI设计部门', '冯设计', 3, 15, 1),
-('市场推广部', 'MKT-PROMO', '市场推广部门', '陈推广', 4, 10, 1),
-('品牌部', 'MKT-BRAND', '品牌建设部门', '褚品牌', 4, 8, 1);
+INSERT INTO department (name, code, description, leader, deputy_leader, parent_id, headcount_limit, level_type, enabled) VALUES
+('集团总部', 'HQ', '集团总部', '张总', '刘副总', NULL, 50, 1, 1),
+('技术中心', 'TECH', '技术研发中心', '李技术长', '陈架构师', 1, 100, 2, 1),
+('产品中心', 'PROD', '产品设计中心', '王产品', '李产品', 1, 50, 2, 1),
+('市场中心', 'MKT', '市场营销中心', '赵市场', '孙市场', 1, 30, 2, 1),
+('后端开发部', 'TECH-BE', '后端开发部门', '孙后端', '钱后端', 2, 30, 3, 1),
+('前端开发部', 'TECH-FE', '前端开发部门', '周前端', '吴前端', 2, 25, 3, 1),
+('测试部', 'TECH-QA', '质量测试部门', '吴测试', '郑测试', 2, 15, 3, 1),
+('产品设计部', 'PROD-PD', '产品设计部门', '郑产品', '冯产品', 3, 20, 3, 1),
+('UI设计部', 'PROD-UI', 'UI设计部门', '冯设计', '陈设计', 3, 15, 3, 1),
+('市场推广部', 'MKT-PROMO', '市场推广部门', '陈推广', '褚推广', 4, 10, 3, 1),
+('品牌部', 'MKT-BRAND', '品牌建设部门', '褚品牌', '卫品牌', 4, 8, 3, 1),
+('电商项目组', 'TECH-BE-ECOM', '电商平台后端项目组', '蒋电商', '沈电商', 5, 8, 4, 1),
+('OA项目组', 'TECH-BE-OA', 'OA系统后端项目组', '韩OA', '杨OA', 5, 6, 4, 1);
 
 INSERT INTO employee (name, email, department_id, role, hire_date, leave_date, contract_end_date, status) VALUES
 ('张三', 'zhangsan@example.com', 5, '后端开发工程师', '2024-03-15', NULL, '2027-03-14', 1),
@@ -606,4 +612,48 @@ CREATE TABLE IF NOT EXISTS sys_audit_log (
     INDEX idx_operation_time (operation_time),
     INDEX idx_archived (archived)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作审计日志表';
+
+-- ==================== 组织架构扩展模块 ====================
+
+-- 负责人变更历史表
+CREATE TABLE IF NOT EXISTS department_leader_change_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    department_id BIGINT NOT NULL COMMENT '部门ID',
+    department_name VARCHAR(100) NOT NULL COMMENT '部门名称',
+    change_type TINYINT NOT NULL COMMENT '变更类型：1-负责人变更，2-副负责人变更',
+    old_leader VARCHAR(100) DEFAULT NULL COMMENT '原负责人',
+    new_leader VARCHAR(100) DEFAULT NULL COMMENT '新负责人',
+    operator_id BIGINT DEFAULT NULL COMMENT '操作人ID',
+    operator_name VARCHAR(100) DEFAULT NULL COMMENT '操作人姓名',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '变更原因/备注',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_department_id (department_id),
+    INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='负责人变更历史表';
+
+-- 组织架构版本快照表
+CREATE TABLE IF NOT EXISTS department_version_snapshot (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    snapshot_name VARCHAR(200) NOT NULL COMMENT '快照名称',
+    snapshot_type TINYINT NOT NULL DEFAULT 1 COMMENT '快照类型：1-手动创建，2-变更自动创建',
+    tree_snapshot JSON NOT NULL COMMENT '部门树JSON快照',
+    description VARCHAR(500) DEFAULT NULL COMMENT '快照描述',
+    operator_id BIGINT DEFAULT NULL COMMENT '操作人ID',
+    operator_name VARCHAR(100) DEFAULT NULL COMMENT '操作人姓名',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_create_time (create_time),
+    INDEX idx_snapshot_type (snapshot_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='组织架构版本快照表';
+
+-- 用户树展开状态记忆表
+CREATE TABLE IF NOT EXISTS user_tree_state (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    tree_key VARCHAR(50) NOT NULL DEFAULT 'department' COMMENT '树标识',
+    expanded_ids JSON NOT NULL COMMENT '展开的节点ID列表',
+    selected_id BIGINT DEFAULT NULL COMMENT '选中的节点ID',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_user_tree (user_id, tree_key),
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户树状态记忆表';
 
