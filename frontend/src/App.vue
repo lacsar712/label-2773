@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
-import { TeamOutlined, UserOutlined } from '@ant-design/icons-vue';
+import { TeamOutlined, UserOutlined, DashboardOutlined } from '@ant-design/icons-vue';
 
 const route = useRoute();
 const selectedKey = ref([route.path]);
@@ -9,6 +9,11 @@ const selectedKey = ref([route.path]);
 const menuItems = [
   {
     key: '/',
+    icon: DashboardOutlined,
+    label: '数据概览',
+  },
+  {
+    key: '/employees',
     icon: UserOutlined,
     label: '员工管理',
   },

@@ -34,7 +34,14 @@ CREATE TABLE IF NOT EXISTS employee (
     email VARCHAR(100) NOT NULL,
     department_id BIGINT NOT NULL COMMENT '部门ID',
     role VARCHAR(100) NOT NULL,
-    INDEX idx_department_id (department_id)
+    hire_date DATE DEFAULT NULL COMMENT '入职日期',
+    leave_date DATE DEFAULT NULL COMMENT '离职日期',
+    contract_end_date DATE DEFAULT NULL COMMENT '合同到期日期',
+    status INT NOT NULL DEFAULT 1 COMMENT '状态：1-在职，2-试用期，3-待转正，4-已离职',
+    INDEX idx_department_id (department_id),
+    INDEX idx_status (status),
+    INDEX idx_hire_date (hire_date),
+    INDEX idx_leave_date (leave_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO department (name, code, description, leader, parent_id, headcount_limit, enabled) VALUES
@@ -50,11 +57,24 @@ INSERT INTO department (name, code, description, leader, parent_id, headcount_li
 ('市场推广部', 'MKT-PROMO', '市场推广部门', '陈推广', 4, 10, 1),
 ('品牌部', 'MKT-BRAND', '品牌建设部门', '褚品牌', 4, 8, 1);
 
-INSERT INTO employee (name, email, department_id, role) VALUES
-('张三', 'zhangsan@example.com', 5, '后端开发工程师'),
-('李四', 'lisi@example.com', 8, '产品经理'),
-('王五', 'wangwu@example.com', 9, 'UI设计师'),
-('赵六', 'zhaoliu@example.com', 6, '前端开发工程师'),
-('钱七', 'qianqi@example.com', 7, '测试工程师'),
-('孙八', 'sunba@example.com', 5, '后端开发工程师'),
-('周九', 'zhoujiu@example.com', 10, '市场专员');
+INSERT INTO employee (name, email, department_id, role, hire_date, leave_date, contract_end_date, status) VALUES
+('张三', 'zhangsan@example.com', 5, '后端开发工程师', '2024-03-15', NULL, '2027-03-14', 1),
+('李四', 'lisi@example.com', 8, '产品经理', '2024-06-01', NULL, '2027-05-31', 1),
+('王五', 'wangwu@example.com', 9, 'UI设计师', '2025-04-10', NULL, '2028-04-09', 2),
+('赵六', 'zhaoliu@example.com', 6, '前端开发工程师', '2023-11-20', NULL, '2026-11-19', 1),
+('钱七', 'qianqi@example.com', 7, '测试工程师', '2024-09-01', NULL, '2027-08-31', 3),
+('孙八', 'sunba@example.com', 5, '后端开发工程师', '2025-05-01', NULL, '2028-04-30', 2),
+('周九', 'zhoujiu@example.com', 10, '市场专员', '2024-01-10', NULL, '2027-01-09', 1),
+('吴十', 'wushi@example.com', 6, '前端开发工程师', '2022-06-15', '2025-03-31', '2025-06-14', 4),
+('郑十一', 'zheng11@example.com', 8, '高级产品经理', '2023-02-01', NULL, '2026-07-31', 1),
+('王十二', 'wang12@example.com', 5, '后端架构师', '2021-08-10', NULL, '2026-08-09', 1),
+('刘十三', 'liu13@example.com', 7, '测试主管', '2023-05-20', NULL, '2026-05-19', 1),
+('陈十四', 'chen14@example.com', 11, '品牌经理', '2024-07-01', NULL, '2027-06-30', 1),
+('杨十五', 'yang15@example.com', 2, '技术总监', '2020-03-01', NULL, '2026-02-28', 1),
+('黄十六', 'huang16@example.com', 5, '后端开发工程师', '2024-11-15', NULL, '2027-11-14', 3),
+('林十七', 'lin17@example.com', 9, '高级UI设计师', '2023-04-10', '2025-05-15', '2026-04-09', 4),
+('徐十八', 'xu18@example.com', 6, '前端开发工程师', '2025-06-01', NULL, '2028-05-31', 2),
+('朱十九', 'zhu19@example.com', 10, '市场经理', '2024-02-01', NULL, '2027-01-31', 1),
+('马二十', 'ma20@example.com', 8, '产品经理', '2025-03-15', NULL, '2028-03-14', 2),
+('胡二一', 'hu21@example.com', 7, '测试工程师', '2024-08-01', NULL, '2027-07-31', 1),
+('郭二二', 'guo22@example.com', 5, '后端开发工程师', '2023-01-10', '2024-12-31', '2026-01-09', 4);

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
+import EmployeeView from '../views/EmployeeView.vue';
 import DepartmentView from '../views/DepartmentView.vue';
 
 const router = createRouter({
@@ -9,6 +10,12 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+      meta: { title: '数据概览' },
+    },
+    {
+      path: '/employees',
+      name: 'employees',
+      component: EmployeeView,
       meta: { title: '员工管理' },
     },
     {
