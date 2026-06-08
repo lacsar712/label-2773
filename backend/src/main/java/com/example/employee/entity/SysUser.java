@@ -39,6 +39,9 @@ public class SysUser {
     @TableField("role_id")
     private Long roleId;
 
+    @TableField("employee_id")
+    private Long employeeId;
+
     @TableField("status")
     private Integer status;
 

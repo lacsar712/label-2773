@@ -164,8 +164,25 @@ public class SalaryRecordService extends ServiceImpl<SalaryRecordMapper, SalaryR
             employees = employeeService.list(wrapper);
         }
 
-        SalaryTemplate defaultTemplate = dto.getDefaultTemplateId() != null
+        SalaryTemplate forceTemplate = dto.getDefaultTemplateId() != null
                 ? salaryTemplateService.getById(dto.getDefaultTemplateId()) : null;
+
+        Map<String, SalaryTemplate> templateByJobLevel = new HashMap<>();
+        SalaryTemplate fallbackTemplate = null;
+        if (forceTemplate == null) {
+            LambdaQueryWrapper<SalaryTemplate> tplWrapper = new LambdaQueryWrapper<>();
+            tplWrapper.eq(SalaryTemplate::getEnabled, 1)
+                    .orderByDesc(SalaryTemplate::getCreateTime);
+            List<SalaryTemplate> allTpls = salaryTemplateService.list(tplWrapper);
+            for (SalaryTemplate t : allTpls) {
+                if (t.getJobLevel() != null) {
+                    templateByJobLevel.putIfAbsent(t.getJobLevel().trim().toUpperCase(), t);
+                }
+                if (fallbackTemplate == null) {
+                    fallbackTemplate = t;
+                }
+            }
+        }
 
         List<SalaryRecord> results = new ArrayList<>();
         for (Employee emp : employees) {
@@ -181,14 +198,14 @@ public class SalaryRecordService extends ServiceImpl<SalaryRecordMapper, SalaryR
 
             Department dept = departmentService.getById(emp.getDepartmentId());
 
-            SalaryTemplate template = defaultTemplate;
-            if (template == null) {
-                LambdaQueryWrapper<SalaryTemplate> tplWrapper = new LambdaQueryWrapper<>();
-                tplWrapper.eq(SalaryTemplate::getEnabled, 1)
-                        .orderByDesc(SalaryTemplate::getCreateTime);
-                List<SalaryTemplate> tpls = salaryTemplateService.list(tplWrapper);
-                if (!tpls.isEmpty()) {
-                    template = tpls.get(0);
+            SalaryTemplate template;
+            if (forceTemplate != null) {
+                template = forceTemplate;
+            } else {
+                String jobLevel = emp.getJobLevel() != null ? emp.getJobLevel().trim().toUpperCase() : null;
+                template = (jobLevel != null) ? templateByJobLevel.get(jobLevel) : null;
+                if (template == null) {
+                    template = fallbackTemplate;
                 }
             }
 
@@ -198,7 +215,7 @@ public class SalaryRecordService extends ServiceImpl<SalaryRecordMapper, SalaryR
             record.setEmployeeName(emp.getName());
             record.setDepartmentId(emp.getDepartmentId());
             record.setDepartmentName(dept != null ? dept.getName() : null);
-            record.setJobLevel(emp.getRole());
+            record.setJobLevel(emp.getJobLevel());
             record.setTemplateId(template != null ? template.getId() : null);
             record.setSalaryYear(dto.getSalaryYear());
             record.setSalaryMonth(dto.getSalaryMonth());

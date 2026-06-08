@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS employee (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
     department_id BIGINT NOT NULL COMMENT '部门ID',
-    role VARCHAR(100) NOT NULL,
+    role VARCHAR(100) NOT NULL COMMENT '岗位',
+    job_level VARCHAR(50) DEFAULT NULL COMMENT '职级：P4/P5/P6/P7/M2等',
     hire_date DATE DEFAULT NULL COMMENT '入职日期',
     leave_date DATE DEFAULT NULL COMMENT '离职日期',
     contract_end_date DATE DEFAULT NULL COMMENT '合同到期日期',
@@ -45,7 +46,8 @@ CREATE TABLE IF NOT EXISTS employee (
     INDEX idx_department_id (department_id),
     INDEX idx_status (status),
     INDEX idx_hire_date (hire_date),
-    INDEX idx_leave_date (leave_date)
+    INDEX idx_leave_date (leave_date),
+    INDEX idx_job_level (job_level)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO department (name, code, description, leader, deputy_leader, parent_id, headcount_limit, level_type, enabled) VALUES
@@ -63,27 +65,27 @@ INSERT INTO department (name, code, description, leader, deputy_leader, parent_i
 ('电商项目组', 'TECH-BE-ECOM', '电商平台后端项目组', '蒋电商', '沈电商', 5, 8, 4, 1),
 ('OA项目组', 'TECH-BE-OA', 'OA系统后端项目组', '韩OA', '杨OA', 5, 6, 4, 1);
 
-INSERT INTO employee (name, email, department_id, role, hire_date, leave_date, contract_end_date, status) VALUES
-('张三', 'zhangsan@example.com', 5, '后端开发工程师', '2024-03-15', NULL, '2027-03-14', 1),
-('李四', 'lisi@example.com', 8, '产品经理', '2024-06-01', NULL, '2027-05-31', 1),
-('王五', 'wangwu@example.com', 9, 'UI设计师', '2025-04-10', NULL, '2028-04-09', 2),
-('赵六', 'zhaoliu@example.com', 6, '前端开发工程师', '2023-11-20', NULL, '2026-11-19', 1),
-('钱七', 'qianqi@example.com', 7, '测试工程师', '2024-09-01', NULL, '2027-08-31', 3),
-('孙八', 'sunba@example.com', 5, '后端开发工程师', '2025-05-01', NULL, '2028-04-30', 2),
-('周九', 'zhoujiu@example.com', 10, '市场专员', '2024-01-10', NULL, '2027-01-09', 1),
-('吴十', 'wushi@example.com', 6, '前端开发工程师', '2022-06-15', '2025-03-31', '2025-06-14', 4),
-('郑十一', 'zheng11@example.com', 8, '高级产品经理', '2023-02-01', NULL, '2026-07-31', 1),
-('王十二', 'wang12@example.com', 5, '后端架构师', '2021-08-10', NULL, '2026-08-09', 1),
-('刘十三', 'liu13@example.com', 7, '测试主管', '2023-05-20', NULL, '2026-05-19', 1),
-('陈十四', 'chen14@example.com', 11, '品牌经理', '2024-07-01', NULL, '2027-06-30', 1),
-('杨十五', 'yang15@example.com', 2, '技术总监', '2020-03-01', NULL, '2026-02-28', 1),
-('黄十六', 'huang16@example.com', 5, '后端开发工程师', '2024-11-15', NULL, '2027-11-14', 3),
-('林十七', 'lin17@example.com', 9, '高级UI设计师', '2023-04-10', '2025-05-15', '2026-04-09', 4),
-('徐十八', 'xu18@example.com', 6, '前端开发工程师', '2025-06-01', NULL, '2028-05-31', 2),
-('朱十九', 'zhu19@example.com', 10, '市场经理', '2024-02-01', NULL, '2027-01-31', 1),
-('马二十', 'ma20@example.com', 8, '产品经理', '2025-03-15', NULL, '2028-03-14', 2),
-('胡二一', 'hu21@example.com', 7, '测试工程师', '2024-08-01', NULL, '2027-07-31', 1),
-('郭二二', 'guo22@example.com', 5, '后端开发工程师', '2023-01-10', '2024-12-31', '2026-01-09', 4);
+INSERT INTO employee (name, email, department_id, role, job_level, hire_date, leave_date, contract_end_date, status) VALUES
+('张三', 'zhangsan@example.com', 5, '后端开发工程师', 'P5', '2024-03-15', NULL, '2027-03-14', 1),
+('李四', 'lisi@example.com', 8, '产品经理', 'P4', '2024-06-01', NULL, '2027-05-31', 1),
+('王五', 'wangwu@example.com', 9, 'UI设计师', 'P5', '2025-04-10', NULL, '2028-04-09', 2),
+('赵六', 'zhaoliu@example.com', 6, '前端开发工程师', 'P5', '2023-11-20', NULL, '2026-11-19', 1),
+('钱七', 'qianqi@example.com', 7, '测试工程师', 'P4', '2024-09-01', NULL, '2027-08-31', 3),
+('孙八', 'sunba@example.com', 5, '后端开发工程师', 'P4', '2025-05-01', NULL, '2028-04-30', 2),
+('周九', 'zhoujiu@example.com', 10, '市场专员', 'P4', '2024-01-10', NULL, '2027-01-09', 1),
+('吴十', 'wushi@example.com', 6, '前端开发工程师', 'P6', '2022-06-15', '2025-03-31', '2025-06-14', 4),
+('郑十一', 'zheng11@example.com', 8, '高级产品经理', 'P6', '2023-02-01', NULL, '2026-07-31', 1),
+('王十二', 'wang12@example.com', 5, '后端架构师', 'P7', '2021-08-10', NULL, '2026-08-09', 1),
+('刘十三', 'liu13@example.com', 7, '测试主管', 'P6', '2023-05-20', NULL, '2026-05-19', 1),
+('陈十四', 'chen14@example.com', 11, '品牌经理', 'P6', '2024-07-01', NULL, '2027-06-30', 1),
+('杨十五', 'yang15@example.com', 2, '技术总监', 'M2', '2020-03-01', NULL, '2026-02-28', 1),
+('黄十六', 'huang16@example.com', 5, '后端开发工程师', 'P4', '2024-11-15', NULL, '2027-11-14', 3),
+('林十七', 'lin17@example.com', 9, '高级UI设计师', 'P6', '2023-04-10', '2025-05-15', '2026-04-09', 4),
+('徐十八', 'xu18@example.com', 6, '前端开发工程师', 'P4', '2025-06-01', NULL, '2028-05-31', 2),
+('朱十九', 'zhu19@example.com', 10, '市场经理', 'P6', '2024-02-01', NULL, '2027-01-31', 1),
+('马二十', 'ma20@example.com', 8, '产品经理', 'P5', '2025-03-15', NULL, '2028-03-14', 2),
+('胡二一', 'hu21@example.com', 7, '测试工程师', 'P5', '2024-08-01', NULL, '2027-07-31', 1),
+('郭二二', 'guo22@example.com', 5, '后端开发工程师', 'P6', '2023-01-10', '2024-12-31', '2026-01-09', 4);
 
 -- 角色表
 CREATE TABLE IF NOT EXISTS sys_role (
@@ -105,6 +107,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
     phone VARCHAR(20) DEFAULT NULL COMMENT '手机号',
     avatar VARCHAR(500) DEFAULT NULL COMMENT '头像URL',
     role_id BIGINT NOT NULL COMMENT '角色ID',
+    employee_id BIGINT DEFAULT NULL COMMENT '关联员工档案ID',
     status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '状态：1-正常，0-禁用',
     is_first_login TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否首次登录：1-是，0-否',
     login_fail_count INT NOT NULL DEFAULT 0 COMMENT '连续登录失败次数',
@@ -115,7 +118,8 @@ CREATE TABLE IF NOT EXISTS sys_user (
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_username (username),
-    INDEX idx_role_id (role_id)
+    INDEX idx_role_id (role_id),
+    INDEX idx_employee_id (employee_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 登录日志表
@@ -155,18 +159,18 @@ INSERT INTO sys_role (role_code, role_name, description) VALUES
 
 -- 插入默认管理员账号（用户名: admin, 密码: admin123，使用BCrypt加密）
 -- BCrypt加密后的 admin123: $2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2
-INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
-('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', 'admin@example.com', 1, 1, 1);
+INSERT INTO sys_user (username, password, nickname, email, role_id, employee_id, status, is_first_login) VALUES
+('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', 'admin@example.com', NULL, 1, 1, 1);
 
--- 插入测试HR账号（用户名: hr, 密码: hr123456）
+-- 插入测试HR账号（用户名: hr, 密码: hr123456），关联员工：李四(产品经理，id=2)
 -- BCrypt加密后的 hr123456: $2a$10$h3X2e6Pa5gASllO9E.jgNemxHIbfz5GM..CbZJROZ1LfaLZlmGHAC
-INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
-('hr', '$2a$10$h3X2e6Pa5gASllO9E.jgNemxHIbfz5GM..CbZJROZ1LfaLZlmGHAC', 'HR管理员', 'hr@example.com', 2, 1, 1);
+INSERT INTO sys_user (username, password, nickname, email, role_id, employee_id, status, is_first_login) VALUES
+('hr', '$2a$10$h3X2e6Pa5gASllO9E.jgNemxHIbfz5GM..CbZJROZ1LfaLZlmGHAC', 'HR管理员', 'hr@example.com', 2, 2, 1, 1);
 
--- 插入测试普通员工账号（用户名: employee, 密码: emp123456）
+-- 插入测试普通员工账号（用户名: employee, 密码: emp123456），关联员工：张三(后端开发，id=1)
 -- BCrypt加密后的 emp123456: $2a$10$qBpVYMZ6PdIaGnjWd9TlfOwPm9Vcp6cfTwi.P0ImXhvBwRBywXCMW
-INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
-('employee', '$2a$10$qBpVYMZ6PdIaGnjWd9TlfOwPm9Vcp6cfTwi.P0ImXhvBwRBywXCMW', '普通员工', 'employee@example.com', 3, 1, 1);
+INSERT INTO sys_user (username, password, nickname, email, role_id, employee_id, status, is_first_login) VALUES
+('employee', '$2a$10$qBpVYMZ6PdIaGnjWd9TlfOwPm9Vcp6cfTwi.P0ImXhvBwRBywXCMW', '张三', 'zhangsan@example.com', 3, 1, 1, 1);
 
 -- ==================== 考勤模块 ====================
 

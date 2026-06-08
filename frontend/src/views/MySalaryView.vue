@@ -70,6 +70,7 @@
         <div class="employee-info">
           <div class="info-item"><span class="label">员工姓名：</span><span class="value">{{ salaryStore.myCurrentRecord.employeeName }}</span></div>
           <div class="info-item"><span class="label">所属部门：</span><span class="value">{{ salaryStore.myCurrentRecord.departmentName || '-' }}</span></div>
+          <div class="info-item" v-if="salaryStore.myCurrentRecord.jobLevel"><span class="label">职级：</span><a-tag color="purple">{{ salaryStore.myCurrentRecord.jobLevel }}</a-tag></div>
           <div class="info-item"><span class="label">薪资单号：</span><span class="value mono">{{ salaryStore.myCurrentRecord.recordNo }}</span></div>
         </div>
 

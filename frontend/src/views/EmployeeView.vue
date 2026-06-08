@@ -54,6 +54,11 @@
               <a-tag :color="getRoleColor(record.role)">{{ record.role }}</a-tag>
             </template>
 
+            <template v-if="column.key === 'jobLevel'">
+              <a-tag v-if="record.jobLevel" color="purple">{{ record.jobLevel }}</a-tag>
+              <span v-else>-</span>
+            </template>
+
             <template v-if="column.key === 'hireDate'">
               <span>{{ record.hireDate || '-' }}</span>
             </template>
@@ -112,6 +117,17 @@
           <a-form-item label="职位" name="role" :rules="[{ required: true, message: '请输入职位!' }]">
             <a-input v-model:value="formState.role" placeholder="例如：高级工程师" />
           </a-form-item>
+          <a-form-item label="职级" name="jobLevel">
+            <a-select v-model:value="formState.jobLevel" style="width: 100%" placeholder="请选择职级（用于自动匹配薪资模板）" allow-clear>
+              <a-select-option value="P4">P4 初级</a-select-option>
+              <a-select-option value="P5">P5 中级</a-select-option>
+              <a-select-option value="P6">P6 高级</a-select-option>
+              <a-select-option value="P7">P7 专家</a-select-option>
+              <a-select-option value="M1">M1 主管</a-select-option>
+              <a-select-option value="M2">M2 经理/总监</a-select-option>
+              <a-select-option value="M3">M3 高管</a-select-option>
+            </a-select>
+          </a-form-item>
           <a-row :gutter="16">
             <a-col :span="12">
               <a-form-item label="入职日期" name="hireDate">
@@ -157,19 +173,21 @@ const formState = reactive<Employee>({
   email: '',
   departmentId: 0 as any,
   role: '',
+  jobLevel: undefined,
   hireDate: undefined,
   contractEndDate: undefined,
   status: 1,
 });
 
 const columns = [
-  { title: '姓名', dataIndex: 'name', key: 'name', width: '18%' },
-  { title: '邮箱', dataIndex: 'email', key: 'email', width: '20%' },
-  { title: '部门', dataIndex: 'departmentName', key: 'department', width: '15%' },
-  { title: '职位', dataIndex: 'role', key: 'role', width: '15%' },
-  { title: '入职日期', dataIndex: 'hireDate', key: 'hireDate', width: '12%' },
+  { title: '姓名', dataIndex: 'name', key: 'name', width: '15%' },
+  { title: '邮箱', dataIndex: 'email', key: 'email', width: '18%' },
+  { title: '部门', dataIndex: 'departmentName', key: 'department', width: '12%' },
+  { title: '职位', dataIndex: 'role', key: 'role', width: '14%' },
+  { title: '职级', dataIndex: 'jobLevel', key: 'jobLevel', width: '8%' },
+  { title: '入职日期', dataIndex: 'hireDate', key: 'hireDate', width: '11%' },
   { title: '状态', dataIndex: 'status', key: 'status', width: '8%' },
-  { title: '操作', key: 'action', width: '12%', align: 'center' },
+  { title: '操作', key: 'action', width: '14%', align: 'center' },
 ];
 
 const deptFilterOptions = computed(() => deptStore.departmentsTree);
@@ -250,6 +268,7 @@ const showModal = (record?: Employee) => {
     formState.email = '';
     formState.departmentId = 0 as any;
     formState.role = '';
+    formState.jobLevel = undefined;
     formState.hireDate = undefined;
     formState.contractEndDate = undefined;
     formState.status = 1;

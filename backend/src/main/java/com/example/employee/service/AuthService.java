@@ -148,6 +148,9 @@ public class AuthService {
 
     private Long findEmployeeIdByUser(SysUser user) {
         if (user == null) return null;
+        if (user.getEmployeeId() != null) {
+            return user.getEmployeeId();
+        }
         LambdaQueryWrapper<Employee> wrapper = new LambdaQueryWrapper<>();
         if (user.getEmail() != null) {
             wrapper.eq(Employee::getEmail, user.getEmail());

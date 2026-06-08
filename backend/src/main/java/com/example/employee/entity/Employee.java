@@ -31,6 +31,8 @@ public class Employee {
     @NotBlank(message = "职位不能为空")
     private String role;
 
+    private String jobLevel;
+
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate hireDate;
 

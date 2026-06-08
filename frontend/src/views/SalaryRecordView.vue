@@ -173,8 +173,11 @@
             style="width: 100%"
           />
         </a-form-item>
-        <a-form-item label="默认模板">
-          <a-select v-model:value="generateForm.defaultTemplateId" allow-clear placeholder="选择薪资模板（可选）" style="width: 100%">
+        <a-form-item
+          label="套用模板"
+          extra="留空则按每位员工的职级（P4/P5/P6...）自动匹配对应薪资模板；选中后将对范围内所有员工强制使用该模板。"
+        >
+          <a-select v-model:value="generateForm.defaultTemplateId" allow-clear placeholder="留空=按职级自动匹配（推荐）" style="width: 100%">
             <a-select-option v-for="t in salaryStore.enabledTemplates" :key="t.id" :value="t.id">
               {{ t.templateName }} ({{ t.jobLevel }})
             </a-select-option>
@@ -188,7 +191,11 @@
         <div class="detail-header">
           <div>
             <h3 class="detail-title">{{ salaryStore.currentRecord.employeeName }} - {{ salaryStore.currentRecord.salaryYear }}年{{ salaryStore.currentRecord.salaryMonth }}月工资单</h3>
-            <p class="detail-sub">薪资单号：{{ salaryStore.currentRecord.recordNo }}</p>
+            <p class="detail-sub">
+              薪资单号：{{ salaryStore.currentRecord.recordNo }}
+              <span v-if="salaryStore.currentRecord.departmentName" style="margin-left: 16px">部门：{{ salaryStore.currentRecord.departmentName }}</span>
+              <a-tag v-if="salaryStore.currentRecord.jobLevel" color="purple" style="margin-left: 8px">{{ salaryStore.currentRecord.jobLevel }}</a-tag>
+            </p>
           </div>
           <a-tag :color="getStatusColor(salaryStore.currentRecord.status)" style="font-size: 14px; padding: 4px 12px">
             {{ salaryStore.currentRecord.statusName }}
@@ -331,6 +338,7 @@ const columns = [
   { title: '薪资单号', dataIndex: 'recordNo', key: 'recordNo', width: 160 },
   { title: '员工', dataIndex: 'employeeName', key: 'employee', width: 140 },
   { title: '部门', dataIndex: 'departmentName', key: 'department', width: 140 },
+  { title: '职级', dataIndex: 'jobLevel', key: 'jobLevel', width: 80 },
   { title: '薪资周期', key: 'period', width: 110 },
   { title: '应发', dataIndex: 'grossSalary', key: 'grossSalary', width: 120 },
   { title: '扣款', dataIndex: 'totalDeduction', key: 'totalDeduction', width: 120 },

@@ -10,6 +10,7 @@ export interface Employee {
   email: string;
   departmentId: number;
   role: string;
+  jobLevel?: string;
   hireDate?: string;
   leaveDate?: string;
   contractEndDate?: string;
