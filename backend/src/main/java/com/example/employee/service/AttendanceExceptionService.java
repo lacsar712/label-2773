@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.employee.entity.AttendanceException;
 import com.example.employee.entity.AttendanceRecord;
+import com.example.employee.entity.Department;
 import com.example.employee.entity.Employee;
 import com.example.employee.mapper.AttendanceExceptionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class AttendanceExceptionService extends ServiceImpl<AttendanceExceptionM
     @Autowired
     private EmployeeService employeeService;
 
+    @Autowired
+    private DepartmentService departmentService;
+
     @Transactional
     public AttendanceException generateException(AttendanceRecord record) {
         if (record.getExceptionFlag() == null || record.getExceptionFlag() == 0) {
@@ -34,12 +38,16 @@ public class AttendanceExceptionService extends ServiceImpl<AttendanceExceptionM
         }
 
         Employee employee = employeeService.getById(record.getEmployeeId());
+        Department dept = employee != null ? departmentService.getById(employee.getDepartmentId()) : null;
 
         AttendanceException exception = new AttendanceException();
         exception.setEmployeeId(record.getEmployeeId());
         if (employee != null) {
             exception.setEmployeeName(employee.getName());
             exception.setDepartmentId(employee.getDepartmentId());
+        }
+        if (dept != null) {
+            exception.setDepartmentName(dept.getName());
         }
         exception.setAttendanceDate(record.getAttendanceDate());
         exception.setLateMinutes(record.getLateMinutes() != null ? record.getLateMinutes() : 0);

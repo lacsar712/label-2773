@@ -15,6 +15,7 @@
                   placeholder="选择员工"
                   style="width: 200px"
                   :loading="employeeStore.loading"
+                  :disabled="isEmployeeRole"
                   @change="handleEmployeeChange"
                 >
                   <a-select-option
@@ -132,10 +133,16 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import dayjs from 'dayjs';
 import { useAttendanceStore, type MakeUpRequest } from '../stores/attendance';
 import { useEmployeeStore } from '../stores/employee';
+import { useAuthStore } from '../stores/auth';
 import { FormOutlined } from '@ant-design/icons-vue';
 
 const attendanceStore = useAttendanceStore();
 const employeeStore = useEmployeeStore();
+const authStore = useAuthStore();
+
+const isEmployeeRole = computed(() => {
+  return authStore.hasRole('EMPLOYEE') && !authStore.hasRole(['ADMIN', 'HR']);
+});
 
 const formRef = ref();
 const selectedEmployeeId = ref<number | undefined>();
@@ -240,13 +247,25 @@ const handleSubmit = async () => {
   }
 };
 
+const initSelectedEmployee = () => {
+  if (isEmployeeRole.value) {
+    const myEmployeeId = authStore.userInfo?.employeeId;
+    if (myEmployeeId) {
+      selectedEmployeeId.value = myEmployeeId;
+      fetchMakeUpList();
+      return;
+    }
+  }
+  if (employeeStore.employees.length > 0 && !selectedEmployeeId.value) {
+    selectedEmployeeId.value = employeeStore.employees[0]!.id;
+    fetchMakeUpList();
+  }
+};
+
 watch(
   () => employeeStore.employees,
-  (emps) => {
-    if (emps.length > 0 && !selectedEmployeeId.value) {
-      selectedEmployeeId.value = emps[0]!.id;
-      fetchMakeUpList();
-    }
+  () => {
+    initSelectedEmployee();
   },
   { immediate: true }
 );

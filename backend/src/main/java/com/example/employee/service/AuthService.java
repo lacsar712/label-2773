@@ -309,6 +309,7 @@ public class AuthService {
         userInfo.setUserId(userId);
         userInfo.setUsername(username);
         userInfo.setRoleCode(roleCode);
+        userInfo.setEmployeeId(findEmployeeIdByUser(user));
         UserContext.setCurrentUser(userInfo);
     }
 }

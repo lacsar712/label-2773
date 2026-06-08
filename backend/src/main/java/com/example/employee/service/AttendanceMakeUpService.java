@@ -3,12 +3,17 @@ package com.example.employee.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.employee.context.UserContext;
 import com.example.employee.dto.AttendanceMakeUpApprovalDTO;
 import com.example.employee.dto.AttendanceMakeUpRequestDTO;
 import com.example.employee.entity.AttendanceMakeUp;
 import com.example.employee.entity.AttendanceRecord;
+import com.example.employee.entity.Department;
 import com.example.employee.entity.Employee;
+import com.example.employee.exception.BusinessException;
 import com.example.employee.mapper.AttendanceMakeUpMapper;
+import com.example.employee.utils.IpUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,30 +27,59 @@ public class AttendanceMakeUpService extends ServiceImpl<AttendanceMakeUpMapper,
     private EmployeeService employeeService;
 
     @Autowired
+    private DepartmentService departmentService;
+
+    @Autowired
     private AttendanceRecordService attendanceRecordService;
 
+    @Autowired
+    private HttpServletRequest request;
+
     @Transactional
-    public AttendanceMakeUp submitMakeUp(AttendanceMakeUpRequestDTO request) {
-        Employee employee = employeeService.getById(request.getEmployeeId());
+    public AttendanceMakeUp submitMakeUp(AttendanceMakeUpRequestDTO dto) {
+        validateMakeUpPermission(dto.getEmployeeId());
+
+        Employee employee = employeeService.getById(dto.getEmployeeId());
         if (employee == null) {
             throw new RuntimeException("员工不存在");
         }
 
+        Department dept = departmentService.getById(employee.getDepartmentId());
+
         AttendanceMakeUp makeup = new AttendanceMakeUp();
-        makeup.setEmployeeId(request.getEmployeeId());
+        makeup.setEmployeeId(dto.getEmployeeId());
         makeup.setEmployeeName(employee.getName());
         makeup.setDepartmentId(employee.getDepartmentId());
-        makeup.setAttendanceDate(request.getAttendanceDate());
-        makeup.setMakeupType(request.getMakeupType());
-        makeup.setMakeupTime(request.getMakeupTime());
-        makeup.setReason(request.getReason());
-        makeup.setLocation(request.getLocation());
-        makeup.setIpAddress(request.getIpAddress());
-        makeup.setLng(request.getLng());
-        makeup.setLat(request.getLat());
+        makeup.setDepartmentName(dept != null ? dept.getName() : null);
+        makeup.setAttendanceDate(dto.getAttendanceDate());
+        makeup.setMakeupType(dto.getMakeupType());
+        makeup.setMakeupTime(dto.getMakeupTime());
+        makeup.setReason(dto.getReason());
+        makeup.setLocation(dto.getLocation());
+        String clientIp = dto.getIpAddress() != null ? dto.getIpAddress() : IpUtil.getIpAddr(request);
+        makeup.setIpAddress(clientIp);
+        makeup.setLng(dto.getLng());
+        makeup.setLat(dto.getLat());
         makeup.setStatus(0);
         save(makeup);
         return makeup;
+    }
+
+    private void validateMakeUpPermission(Long targetEmployeeId) {
+        var currentUser = UserContext.getCurrentUser();
+        if (currentUser == null) {
+            throw new BusinessException(401, "未登录");
+        }
+        String roleCode = currentUser.getRoleCode();
+        if (!"ADMIN".equals(roleCode) && !"HR".equals(roleCode)) {
+            Long myEmployeeId = currentUser.getEmployeeId();
+            if (myEmployeeId == null) {
+                throw new BusinessException(403, "当前用户未关联员工信息");
+            }
+            if (!myEmployeeId.equals(targetEmployeeId)) {
+                throw new BusinessException(403, "无权为其他员工提交补卡申请");
+            }
+        }
     }
 
     @Transactional

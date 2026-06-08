@@ -3,6 +3,7 @@ package com.example.employee.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.employee.context.UserContext;
 import com.example.employee.dto.AttendanceCalendarDTO;
 import com.example.employee.dto.AttendanceRecordQueryDTO;
 import com.example.employee.dto.ClockInRequestDTO;
@@ -10,7 +11,10 @@ import com.example.employee.dto.ClockInResponseDTO;
 import com.example.employee.entity.AttendanceRecord;
 import com.example.employee.entity.AttendanceRule;
 import com.example.employee.entity.Employee;
+import com.example.employee.exception.BusinessException;
 import com.example.employee.mapper.AttendanceRecordMapper;
+import com.example.employee.utils.IpUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,24 +43,30 @@ public class AttendanceRecordService extends ServiceImpl<AttendanceRecordMapper,
     @Autowired
     private DepartmentService departmentService;
 
+    @Autowired
+    private HttpServletRequest request;
+
     @Transactional
-    public ClockInResponseDTO checkIn(ClockInRequestDTO request) {
+    public ClockInResponseDTO checkIn(ClockInRequestDTO dto) {
+        validateClockPermission(dto.getEmployeeId());
+
         LocalDate today = LocalDate.now();
-        AttendanceRecord record = getOrCreateRecord(request.getEmployeeId(), today);
+        AttendanceRecord record = getOrCreateRecord(dto.getEmployeeId(), today);
 
         if (record.getCheckInTime() != null) {
             return new ClockInResponseDTO(false, "今日已上班打卡", record);
         }
 
-        AttendanceRule rule = attendanceRuleService.getEmployeeTodayRule(request.getEmployeeId());
+        AttendanceRule rule = attendanceRuleService.getEmployeeTodayRule(dto.getEmployeeId());
         record.setRuleId(rule.getId());
 
         LocalDateTime now = LocalDateTime.now();
         record.setCheckInTime(now);
-        record.setCheckInIp(request.getIpAddress());
-        record.setCheckInLocation(request.getLocation());
-        record.setCheckInLng(request.getLng());
-        record.setCheckInLat(request.getLat());
+        String clientIp = dto.getIpAddress() != null ? dto.getIpAddress() : IpUtil.getIpAddr(request);
+        record.setCheckInIp(clientIp);
+        record.setCheckInLocation(dto.getLocation());
+        record.setCheckInLng(dto.getLng());
+        record.setCheckInLat(dto.getLat());
         record.setCheckInType(1);
 
         calculateStatus(record, rule);
@@ -71,9 +81,11 @@ public class AttendanceRecordService extends ServiceImpl<AttendanceRecordMapper,
     }
 
     @Transactional
-    public ClockInResponseDTO checkOut(ClockInRequestDTO request) {
+    public ClockInResponseDTO checkOut(ClockInRequestDTO dto) {
+        validateClockPermission(dto.getEmployeeId());
+
         LocalDate today = LocalDate.now();
-        AttendanceRecord record = getById(getRecordId(request.getEmployeeId(), today));
+        AttendanceRecord record = getById(getRecordId(dto.getEmployeeId(), today));
 
         if (record == null) {
             return new ClockInResponseDTO(false, "未找到今日上班打卡记录", null);
@@ -84,15 +96,16 @@ public class AttendanceRecordService extends ServiceImpl<AttendanceRecordMapper,
 
         AttendanceRule rule = attendanceRuleService.getById(record.getRuleId());
         if (rule == null) {
-            rule = attendanceRuleService.getEmployeeTodayRule(request.getEmployeeId());
+            rule = attendanceRuleService.getEmployeeTodayRule(dto.getEmployeeId());
         }
 
         LocalDateTime now = LocalDateTime.now();
         record.setCheckOutTime(now);
-        record.setCheckOutIp(request.getIpAddress());
-        record.setCheckOutLocation(request.getLocation());
-        record.setCheckOutLng(request.getLng());
-        record.setCheckOutLat(request.getLat());
+        String clientIp = dto.getIpAddress() != null ? dto.getIpAddress() : IpUtil.getIpAddr(request);
+        record.setCheckOutIp(clientIp);
+        record.setCheckOutLocation(dto.getLocation());
+        record.setCheckOutLng(dto.getLng());
+        record.setCheckOutLat(dto.getLat());
         record.setCheckOutType(1);
 
         calculateWorkMinutes(record);
@@ -105,6 +118,24 @@ public class AttendanceRecordService extends ServiceImpl<AttendanceRecordMapper,
 
         String msg = record.getEarlyMinutes() > 0 ? "下班打卡成功，早退" + record.getEarlyMinutes() + "分钟" : "下班打卡成功";
         return new ClockInResponseDTO(true, msg, record);
+    }
+
+    private void validateClockPermission(Long targetEmployeeId) {
+        var currentUser = UserContext.getCurrentUser();
+        if (currentUser == null) {
+            throw new BusinessException(401, "未登录");
+        }
+        String roleCode = currentUser.getRoleCode();
+        // 管理员和 HR 可以代打卡，普通员工只能给自己打卡
+        if (!"ADMIN".equals(roleCode) && !"HR".equals(roleCode)) {
+            Long myEmployeeId = currentUser.getEmployeeId();
+            if (myEmployeeId == null) {
+                throw new BusinessException(403, "当前用户未关联员工信息，无法打卡");
+            }
+            if (!myEmployeeId.equals(targetEmployeeId)) {
+                throw new BusinessException(403, "无权为其他员工打卡");
+            }
+        }
     }
 
     public AttendanceRecord getEmployeeRecordForDate(Long employeeId, LocalDate date) {
