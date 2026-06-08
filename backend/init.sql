@@ -362,6 +362,8 @@ CREATE TABLE IF NOT EXISTS leave_application (
     application_no VARCHAR(50) NOT NULL UNIQUE COMMENT '申请单号',
     employee_id BIGINT NOT NULL COMMENT '申请人ID',
     employee_name VARCHAR(100) DEFAULT NULL COMMENT '申请人姓名',
+    proxy_employee_id BIGINT DEFAULT NULL COMMENT '代申请人ID（非本人申请时记录）',
+    proxy_employee_name VARCHAR(100) DEFAULT NULL COMMENT '代申请人姓名',
     department_id BIGINT DEFAULT NULL COMMENT '部门ID',
     department_name VARCHAR(100) DEFAULT NULL COMMENT '部门名称',
     leave_type TINYINT NOT NULL COMMENT '假期类型：1-年假，2-事假，3-病假，4-调休',

@@ -13,6 +13,7 @@ import AttendanceApprovalView from '../views/AttendanceApprovalView.vue';
 import AttendanceReportView from '../views/AttendanceReportView.vue';
 import LeaveApplicationView from '../views/LeaveApplicationView.vue';
 import LeaveApprovalView from '../views/LeaveApprovalView.vue';
+import LeaveApprovalConfigView from '../views/LeaveApprovalConfigView.vue';
 import SalaryRecordView from '../views/SalaryRecordView.vue';
 import SalaryTemplateView from '../views/SalaryTemplateView.vue';
 import MySalaryView from '../views/MySalaryView.vue';
@@ -113,6 +114,12 @@ const routes: RouteRecordRaw[] = [
     name: 'leave-approval',
     component: LeaveApprovalView,
     meta: { title: '请假审批', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/leave/config',
+    name: 'leave-config',
+    component: LeaveApprovalConfigView,
+    meta: { title: '审批流程配置', requiresAuth: true, roles: ['ADMIN', 'HR'] },
   },
   {
     path: '/salary/manage',

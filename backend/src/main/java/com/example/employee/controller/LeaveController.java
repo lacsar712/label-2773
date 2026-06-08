@@ -7,8 +7,10 @@ import com.example.employee.dto.LeaveApplicationQueryDTO;
 import com.example.employee.dto.LeaveApprovalDTO;
 import com.example.employee.dto.LeaveDaysCalculateDTO;
 import com.example.employee.dto.UserInfoDTO;
+import com.example.employee.entity.Employee;
 import com.example.employee.entity.LeaveApplication;
 import com.example.employee.entity.LeaveBalance;
+import com.example.employee.service.EmployeeService;
 import com.example.employee.service.HolidayService;
 import com.example.employee.service.LeaveApplicationService;
 import com.example.employee.service.LeaveBalanceService;
@@ -34,6 +36,9 @@ public class LeaveController {
     @Autowired
     private HolidayService holidayService;
 
+    @Autowired
+    private EmployeeService employeeService;
+
     @PostMapping("/calculate-days")
     @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
     public Result<LeaveDaysCalculateDTO> calculateDays(@RequestBody @Valid LeaveDaysCalculateDTO dto) {
@@ -43,6 +48,15 @@ public class LeaveController {
     @PostMapping("/draft")
     @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
     public Result<LeaveApplication> createDraft(@RequestBody @Valid LeaveApplication application) {
+        UserInfoDTO currentUser = UserContext.getCurrentUser();
+        if (currentUser != null && currentUser.getEmployeeId() != null
+                && !currentUser.getEmployeeId().equals(application.getEmployeeId())) {
+            application.setProxyEmployeeId(currentUser.getEmployeeId());
+            Employee proxy = employeeService.getById(currentUser.getEmployeeId());
+            if (proxy != null) {
+                application.setProxyEmployeeName(proxy.getName());
+            }
+        }
         return Result.success(leaveApplicationService.createDraft(application));
     }
 
@@ -56,8 +70,11 @@ public class LeaveController {
     @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
     public Result<LeaveApplication> approveApplication(@RequestBody @Valid LeaveApprovalDTO dto) {
         UserInfoDTO currentUser = UserContext.getCurrentUser();
-        if (currentUser != null && currentUser.getEmployeeId() != null) {
-            dto.setApproverId(currentUser.getEmployeeId());
+        if (currentUser != null) {
+            if (currentUser.getEmployeeId() != null) {
+                dto.setApproverId(currentUser.getEmployeeId());
+            }
+            dto.setApproverRoleCode(currentUser.getRoleCode());
         }
         return Result.success(leaveApplicationService.approveApplication(dto));
     }
@@ -83,10 +100,15 @@ public class LeaveController {
     @GetMapping("/my-approvals")
     @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
     public Result<Page<LeaveApplication>> getMyApprovals(
-            @RequestParam Long approverId,
+            @RequestParam(required = false) Long approverId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        return Result.success(leaveApplicationService.getMyPendingApprovals(approverId, pageNum, pageSize));
+        UserInfoDTO currentUser = UserContext.getCurrentUser();
+        boolean isAdminOrHr = currentUser != null
+                && ("ADMIN".equals(currentUser.getRoleCode()) || "HR".equals(currentUser.getRoleCode()));
+        return Result.success(leaveApplicationService.getMyPendingApprovals(
+                approverId != null ? approverId : (currentUser != null ? currentUser.getEmployeeId() : null),
+                isAdminOrHr, pageNum, pageSize));
     }
 
     @GetMapping("/balance/{employeeId}")

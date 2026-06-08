@@ -199,23 +199,33 @@ public class LeaveApplicationService extends ServiceImpl<LeaveApplicationMapper,
             throw new RuntimeException("只有审批中的申请可以审批");
         }
 
+        boolean isAdminOrHr = "ADMIN".equals(dto.getApproverRoleCode()) || "HR".equals(dto.getApproverRoleCode());
+
         LambdaQueryWrapper<LeaveApprovalNode> nodeWrapper = new LambdaQueryWrapper<>();
         nodeWrapper.eq(LeaveApprovalNode::getApplicationId, dto.getApplicationId())
                 .eq(LeaveApprovalNode::getNodeIndex, application.getCurrentNodeIndex())
                 .orderByAsc(LeaveApprovalNode::getId);
         List<LeaveApprovalNode> currentNodes = approvalNodeMapper.selectList(nodeWrapper);
 
-        LeaveApprovalNode currentNode = currentNodes.stream()
-                .filter(n -> n.getStatus() == 0 && (dto.getApproverId() == null
-                        || n.getApproverId().equals(dto.getApproverId())))
-                .findFirst()
-                .orElse(null);
-
-        if (currentNode == null && dto.getApproverId() != null) {
+        LeaveApprovalNode currentNode;
+        if (isAdminOrHr) {
             currentNode = currentNodes.stream()
                     .filter(n -> n.getStatus() == 0)
                     .findFirst()
                     .orElse(null);
+        } else {
+            currentNode = currentNodes.stream()
+                    .filter(n -> n.getStatus() == 0 && (dto.getApproverId() == null
+                            || n.getApproverId().equals(dto.getApproverId())))
+                    .findFirst()
+                    .orElse(null);
+
+            if (currentNode == null && dto.getApproverId() != null) {
+                currentNode = currentNodes.stream()
+                        .filter(n -> n.getStatus() == 0)
+                        .findFirst()
+                        .orElse(null);
+            }
         }
 
         if (currentNode == null) {
@@ -472,16 +482,29 @@ public class LeaveApplicationService extends ServiceImpl<LeaveApplicationMapper,
         return page;
     }
 
-    public Page<LeaveApplication> getMyPendingApprovals(Long approverId, Integer pageNum, Integer pageSize) {
-        LambdaQueryWrapper<LeaveApprovalNode> nodeWrapper = new LambdaQueryWrapper<>();
-        nodeWrapper.eq(LeaveApprovalNode::getApproverId, approverId)
-                .eq(LeaveApprovalNode::getStatus, 0);
-        List<LeaveApprovalNode> pendingNodes = approvalNodeMapper.selectList(nodeWrapper);
-
-        List<Long> applicationIds = pendingNodes.stream()
-                .map(LeaveApprovalNode::getApplicationId)
-                .distinct()
-                .toList();
+    public Page<LeaveApplication> getMyPendingApprovals(Long approverId, boolean isAdminOrHr, Integer pageNum, Integer pageSize) {
+        List<Long> applicationIds;
+        if (isAdminOrHr) {
+            LambdaQueryWrapper<LeaveApprovalNode> nodeWrapper = new LambdaQueryWrapper<>();
+            nodeWrapper.eq(LeaveApprovalNode::getStatus, 0);
+            List<LeaveApprovalNode> pendingNodes = approvalNodeMapper.selectList(nodeWrapper);
+            applicationIds = pendingNodes.stream()
+                    .map(LeaveApprovalNode::getApplicationId)
+                    .distinct()
+                    .toList();
+        } else {
+            if (approverId == null) {
+                return new Page<>(pageNum, pageSize);
+            }
+            LambdaQueryWrapper<LeaveApprovalNode> nodeWrapper = new LambdaQueryWrapper<>();
+            nodeWrapper.eq(LeaveApprovalNode::getApproverId, approverId)
+                    .eq(LeaveApprovalNode::getStatus, 0);
+            List<LeaveApprovalNode> pendingNodes = approvalNodeMapper.selectList(nodeWrapper);
+            applicationIds = pendingNodes.stream()
+                    .map(LeaveApprovalNode::getApplicationId)
+                    .distinct()
+                    .toList();
+        }
 
         if (applicationIds.isEmpty()) {
             return new Page<>(pageNum, pageSize);

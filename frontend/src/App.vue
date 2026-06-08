@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, h } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
-import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined, NotificationOutlined, BellOutlined, SafetyOutlined } from '@ant-design/icons-vue';
+import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, SettingOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined, NotificationOutlined, BellOutlined, SafetyOutlined } from '@ant-design/icons-vue';
 import { Modal, message } from 'ant-design-vue';
 import { useAuthStore } from './stores/auth';
 
@@ -64,6 +64,13 @@ const menuItems = computed(() => {
       icon: CheckCircleOutlined,
       label: '请假审批',
       roles: ['ADMIN', 'HR', 'EMPLOYEE'],
+    });
+  }
+  if (authStore.hasRole(['ADMIN', 'HR'])) {
+    items.push({
+      key: '/leave/config',
+      icon: SettingOutlined,
+      label: '审批流程配置',
     });
   }
   items.push({

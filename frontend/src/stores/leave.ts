@@ -49,6 +49,8 @@ export interface LeaveApplication {
   applicationNo?: string;
   employeeId?: number;
   employeeName?: string;
+  proxyEmployeeId?: number;
+  proxyEmployeeName?: string;
   departmentId?: number;
   departmentName?: string;
   leaveType?: number;
@@ -93,6 +95,22 @@ export interface LeaveApprovalRequest {
   addSignApproverName?: string;
 }
 
+export interface LeaveApprovalConfigItem {
+  id?: number;
+  leaveType?: number;
+  minDays?: number;
+  maxDays?: number;
+  departmentId?: number | null;
+  nodeIndex?: number;
+  nodeName?: string;
+  approverRole?: string;
+  approverId?: number | null;
+  skipCondition?: string;
+  enabled?: number;
+  createTime?: string;
+  updateTime?: string;
+}
+
 export interface LeaveQueryParams {
   employeeId?: number;
   approverId?: number;
@@ -121,6 +139,7 @@ export const useLeaveStore = defineStore('leave', {
     myApprovalTotal: 0,
     currentApplication: null as LeaveApplication | null,
     balanceList: [] as LeaveBalance[],
+    approvalConfigList: [] as LeaveApprovalConfigItem[],
     loading: false,
   }),
   getters: {},
@@ -231,12 +250,14 @@ export const useLeaveStore = defineStore('leave', {
       }
     },
 
-    async fetchMyApprovals(approverId: number, pageNum = 1, pageSize = 10) {
+    async fetchMyApprovals(approverId?: number, pageNum = 1, pageSize = 10) {
       this.loading = true;
       try {
+        const params: any = { pageNum, pageSize };
+        if (approverId) params.approverId = approverId;
         const res = await request.get<any, Result<PageResult<LeaveApplication>>>(
           `${API_URL}/my-approvals`,
-          { params: { approverId, pageNum, pageSize } }
+          { params }
         );
         this.myApprovalList = res.data.records;
         this.myApprovalTotal = res.data.total;
@@ -256,6 +277,58 @@ export const useLeaveStore = defineStore('leave', {
         return res.data;
       } catch (error) {
         return [];
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchApprovalConfigs(params?: { leaveType?: number; departmentId?: number }) {
+      this.loading = true;
+      try {
+        const res = await request.get<any, Result<LeaveApprovalConfigItem[]>>(`${API_URL}/config/list`, { params });
+        this.approvalConfigList = res.data;
+        return res.data;
+      } catch (error) {
+        return [];
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async createApprovalConfig(data: LeaveApprovalConfigItem): Promise<LeaveApprovalConfigItem | null> {
+      this.loading = true;
+      try {
+        const res = await request.post<any, Result<LeaveApprovalConfigItem>>(`${API_URL}/config`, data);
+        message.success('创建成功');
+        return res.data;
+      } catch (error) {
+        return null;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async updateApprovalConfig(data: LeaveApprovalConfigItem): Promise<LeaveApprovalConfigItem | null> {
+      this.loading = true;
+      try {
+        const res = await request.put<any, Result<LeaveApprovalConfigItem>>(`${API_URL}/config`, data);
+        message.success('更新成功');
+        return res.data;
+      } catch (error) {
+        return null;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async deleteApprovalConfig(id: number): Promise<boolean> {
+      this.loading = true;
+      try {
+        await request.delete<any, Result<void>>(`${API_URL}/config/${id}`);
+        message.success('删除成功');
+        return true;
+      } catch (error) {
+        return false;
       } finally {
         this.loading = false;
       }

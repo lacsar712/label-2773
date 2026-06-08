@@ -27,6 +27,10 @@ public class LeaveApplication {
 
     private String employeeName;
 
+    private Long proxyEmployeeId;
+
+    private String proxyEmployeeName;
+
     private Long departmentId;
 
     private String departmentName;

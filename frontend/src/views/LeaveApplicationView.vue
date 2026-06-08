@@ -28,6 +28,15 @@
               </div>
             </div>
 
+            <a-alert
+              v-if="isProxyMode"
+              class="proxy-alert"
+              type="warning"
+              show-icon
+              message="代申请模式"
+              description="当前正在以他人身份提交请假申请，系统将记录您为代申请人"
+            />
+
             <div v-if="selectedEmployeeId" class="balance-section">
               <a-row :gutter="12">
                 <a-col :span="12" v-for="bal in displayBalances" :key="bal.leaveType">
@@ -260,6 +269,9 @@
         <a-descriptions :column="2" bordered size="small">
           <a-descriptions-item label="申请单号">{{ leaveStore.currentApplication.applicationNo }}</a-descriptions-item>
           <a-descriptions-item label="申请人">{{ leaveStore.currentApplication.employeeName }}</a-descriptions-item>
+          <a-descriptions-item v-if="leaveStore.currentApplication.proxyEmployeeName" label="代申请人" :span="2">
+            <a-tag color="purple">{{ leaveStore.currentApplication.proxyEmployeeName }}</a-tag>
+          </a-descriptions-item>
           <a-descriptions-item label="部门">{{ leaveStore.currentApplication.departmentName }}</a-descriptions-item>
           <a-descriptions-item label="假期类型">
             <a-tag :color="getLeaveTypeColor(leaveStore.currentApplication.leaveType)">
@@ -320,6 +332,11 @@ import {
 const leaveStore = useLeaveStore();
 const employeeStore = useEmployeeStore();
 const authStore = useAuthStore();
+
+const isProxyMode = computed(() => {
+  if (!selectedEmployeeId.value || !authStore.userInfo?.employeeId) return false;
+  return selectedEmployeeId.value !== authStore.userInfo.employeeId;
+});
 
 const formRef = ref();
 const selectedEmployeeId = ref<number | undefined>();

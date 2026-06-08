@@ -395,7 +395,12 @@ const getNodeDescription = (node: any) => {
   return desc;
 };
 
+const isAdminOrHr = computed(() =>
+  authStore.hasRole(['ADMIN', 'HR'])
+);
+
 const isMyApproval = (record: LeaveApplication) => {
+  if (isAdminOrHr.value) return true;
   const approverId = authStore.userInfo?.employeeId;
   if (!approverId) return false;
   return record.currentApproverId === approverId;
@@ -409,8 +414,8 @@ const filterEmployeeOption = (input: string, option: any) => {
 const fetchList = () => {
   if (filterStatus.value === 1 || filterStatus.value === undefined) {
     const approverId = authStore.userInfo?.employeeId;
-    if (approverId) {
-      leaveStore.fetchMyApprovals(approverId, pageNum.value, pageSize.value);
+    if (approverId || isAdminOrHr.value) {
+      leaveStore.fetchMyApprovals(approverId!, pageNum.value, pageSize.value);
     }
   } else {
     leaveStore.fetchApplicationList({

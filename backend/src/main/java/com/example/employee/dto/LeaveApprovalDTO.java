@@ -22,4 +22,6 @@ public class LeaveApprovalDTO {
     private String addSignApproverName;
 
     private Long approverId;
+
+    private String approverRoleCode;
 }
