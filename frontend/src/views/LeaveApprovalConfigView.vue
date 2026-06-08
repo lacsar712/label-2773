@@ -37,7 +37,7 @@
               :loading="departmentStore.loading"
               @change="fetchData"
             >
-              <a-select-option v-for="d in departmentStore.departments" :key="d.id" :value="d.id">
+              <a-select-option v-for="d in departmentStore.departmentsFlat" :key="d.id" :value="d.id">
                 {{ d.name }}
               </a-select-option>
             </a-select>
@@ -121,7 +121,7 @@
           <a-col :span="12">
             <a-form-item label="适用部门" name="departmentId">
               <a-select v-model:value="formState.departmentId" style="width: 100%" allow-clear placeholder="全部门">
-                <a-select-option v-for="d in departmentStore.departments" :key="d.id" :value="d.id">
+                <a-select-option v-for="d in departmentStore.departmentsFlat" :key="d.id" :value="d.id">
                   {{ d.name }}
                 </a-select-option>
               </a-select>
@@ -212,7 +212,6 @@
 
 <script lang="ts" setup>
 import { ref, computed, reactive, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 import { useLeaveStore, type LeaveApprovalConfigItem } from '../stores/leave';
 import { useDepartmentStore } from '../stores/department';
@@ -281,7 +280,7 @@ const getApproverRoleName = (role?: string) => {
 
 const getDepartmentName = (deptId?: number | null) => {
   if (!deptId) return '全部门';
-  const dept = departmentStore.departments.find((d: any) => d.id === deptId);
+  const dept = departmentStore.departmentsFlat.find((d) => d.id === deptId);
   return dept ? dept.name : '-';
 };
 
@@ -361,7 +360,7 @@ const handleDelete = async (record: LeaveApprovalConfigItem) => {
 };
 
 onMounted(async () => {
-  await Promise.all([departmentStore.fetchDepartments(), employeeStore.fetchEmployees()]);
+  await Promise.all([departmentStore.fetchDepartmentsFlat(), employeeStore.fetchEmployees()]);
   fetchData();
 });
 </script>

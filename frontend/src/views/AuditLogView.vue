@@ -80,8 +80,6 @@
           class="modern-table"
           :scroll="{ x: 1600 }"
           @change="handleTableChange"
-          :expandable="{ expandedRowRender, expandedRowKeys }"
-          @expand="handleExpand"
         >
           <template #bodyCell="{ column, record, index }">
             <template v-if="column.key === 'index'">
@@ -174,7 +172,7 @@
         </a-descriptions>
 
         <div class="diff-section-title">
-          <template #icon><DiffOutlined /></template>
+          <DiffOutlined />
           字段变更对比
           <span class="diff-count" v-if="currentDetail.diffs?.length">
             （共 {{ currentDetail.diffs.length }} 处变更）
@@ -233,7 +231,7 @@
         <div class="timeline">
           <a-timeline mode="left">
             <a-timeline-item
-              v-for="(record, idx) in trailRecords"
+              v-for="record in trailRecords"
               :key="record.id"
               :color="getTimelineColor(record.operationType)"
             >
@@ -329,8 +327,6 @@ const pageSize = ref(10);
 const loading = ref(false);
 const records = ref<AuditLogRecord[]>([]);
 const total = ref(0);
-const expandedRowKeys = ref<number[]>([]);
-
 const detailModalVisible = ref(false);
 const currentDetail = ref<AuditLogDetailDTO | null>(null);
 
@@ -506,14 +502,6 @@ const viewOperatorTrail = async (record: AuditLogRecord) => {
   } catch (e) {
     console.error('获取操作人操作历史失败', e);
   }
-};
-
-const handleExpand = (expandedKeys: number[]) => {
-  expandedRowKeys.value = expandedKeys;
-};
-
-const expandedRowRender = (record: AuditLogRecord) => {
-  return null;
 };
 
 onMounted(() => {
