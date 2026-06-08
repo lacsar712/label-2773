@@ -27,6 +27,7 @@ import AnnouncementManageView from '../views/AnnouncementManageView.vue';
 import AnnouncementEditView from '../views/AnnouncementEditView.vue';
 import AnnouncementDetailView from '../views/AnnouncementDetailView.vue';
 import LoginLogView from '../views/LoginLogView.vue';
+import AuditLogView from '../views/AuditLogView.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -54,6 +55,12 @@ const routes: RouteRecordRaw[] = [
     name: 'login-logs',
     component: LoginLogView,
     meta: { title: '登录日志', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+  },
+  {
+    path: '/audit-logs',
+    name: 'audit-logs',
+    component: AuditLogView,
+    meta: { title: '操作审计日志', requiresAuth: true, roles: ['ADMIN', 'HR'] },
   },
   {
     path: '/',

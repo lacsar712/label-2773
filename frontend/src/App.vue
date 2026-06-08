@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, h } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
-import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, SettingOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined, NotificationOutlined, BellOutlined, SafetyOutlined } from '@ant-design/icons-vue';
+import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, SettingOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined, NotificationOutlined, BellOutlined, SafetyOutlined, HistoryOutlined } from '@ant-design/icons-vue';
 import { Modal, message } from 'ant-design-vue';
 import { useAuthStore } from './stores/auth';
 
@@ -97,6 +97,14 @@ const menuItems = computed(() => {
     label: '登录日志',
     roles: ['ADMIN', 'HR', 'EMPLOYEE'],
   });
+  if (authStore.hasRole(['ADMIN', 'HR'])) {
+    items.push({
+      key: '/audit-logs',
+      icon: HistoryOutlined,
+      label: '操作审计日志',
+      roles: ['ADMIN', 'HR'],
+    });
+  }
   if (authStore.hasRole(['ADMIN', 'HR'])) {
     items.push(
       { key: '/employees', icon: UserOutlined, label: '员工管理', roles: ['ADMIN', 'HR'] },
