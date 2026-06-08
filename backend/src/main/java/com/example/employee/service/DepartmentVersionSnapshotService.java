@@ -24,7 +24,8 @@ public class DepartmentVersionSnapshotService extends ServiceImpl<DepartmentVers
     @Lazy
     private DepartmentService departmentService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public List<DepartmentVersionSnapshot> listAll() {
         LambdaQueryWrapper<DepartmentVersionSnapshot> wrapper = new LambdaQueryWrapper<>();

@@ -26,7 +26,112 @@
       </div>
     </div>
 
-    <div class="org-content">
+    <div class="view-toggle-bar">
+      <a-segmented
+        v-model:value="viewMode"
+        :options="viewOptions"
+        size="large"
+      />
+      <span class="view-hint">
+        {{ viewMode === 'tree' ? '左侧导航 + 右侧详情，适合层级浏览' : '平铺表格，支持按列排序与批量查看' }}
+      </span>
+    </div>
+
+    <div v-if="viewMode === 'list'" class="list-view">
+      <a-card class="list-card" :bordered="false">
+        <a-table
+          :columns="tableColumns"
+          :data-source="filteredFlatList"
+          :pagination="{ pageSize: 10, showSizeChanger: true, showTotal: (t) => `共 ${t} 个部门` }"
+          row-key="id"
+          size="middle"
+          :scroll="{ x: 1200 }"
+        >
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'name'">
+              <div class="table-dept-name">
+                <component :is="getLevelIcon(record.levelType)" class="level-icon-sm" />
+                <span :class="{ disabled: !record.enabled }">{{ record.name }}</span>
+              </div>
+            </template>
+            <template v-if="column.key === 'code'">
+              <code class="dept-code-cell">{{ record.code }}</code>
+            </template>
+            <template v-if="column.key === 'parentName'">
+              <span>{{ record.parentName || '—' }}</span>
+            </template>
+            <template v-if="column.key === 'leader'">
+              <span v-if="record.leader">{{ record.leader }}</span>
+              <span v-else style="color: #bfbfbf">未设置</span>
+              <span v-if="record.deputyLeader" class="deputy-leader"> / {{ record.deputyLeader }}</span>
+            </template>
+            <template v-if="column.key === 'headcount'">
+              <div class="headcount-cell">
+                <span :class="{ danger: record.overHeadcount }">{{ record.activeEmployeeCount || 0 }}</span>
+                <span class="divider">/</span>
+                <span>{{ record.headcountLimit }}</span>
+                <a-progress
+                  v-if="record.headcountLimit"
+                  :percent="Math.min(100, Math.round(((record.activeEmployeeCount || 0) / record.headcountLimit) * 100))"
+                  :status="record.overHeadcount ? 'exception' : 'normal'"
+                  :show-info="false"
+                  size="small"
+                  style="width: 80px; margin-left: 8px"
+                />
+                <a-tag v-if="record.overHeadcount" color="red" style="margin-left: 6px">超员</a-tag>
+              </div>
+            </template>
+            <template v-if="column.key === 'levelType'">
+              <a-tag v-if="record.levelType" :color="getLevelTagColor(record.levelType)">
+                {{ getLevelTypeName(record.levelType) }}
+              </a-tag>
+              <span v-else style="color: #bfbfbf">未设置</span>
+            </template>
+            <template v-if="column.key === 'status'">
+              <a-tag :color="record.enabled ? 'green' : 'default'">
+                {{ record.enabled ? '启用' : '停用' }}
+              </a-tag>
+            </template>
+            <template v-if="column.key === 'createTime'">
+              <span class="time-cell">{{ formatTime(record.createTime) }}</span>
+            </template>
+            <template v-if="column.key === 'action'">
+              <a-space size="small">
+                <a-button type="link" size="small" @click="showModal(record)">编辑</a-button>
+                <a-divider type="vertical" />
+                <a-button
+                  type="link"
+                  size="small"
+                  :type="record.enabled ? 'default' : 'primary'"
+                  @click="handleToggle(record)"
+                >
+                  {{ record.enabled ? '停用' : '启用' }}
+                </a-button>
+                <a-divider type="vertical" />
+                <a-button
+                  type="link"
+                  size="small"
+                  @click="viewModeToListThenDetail(record)"
+                >
+                  详情
+                </a-button>
+                <a-divider type="vertical" />
+                <a-popconfirm
+                  :title="getDeleteConfirmText(record)"
+                  @confirm="handleDelete(record.id as number)"
+                  ok-text="确定"
+                  cancel-text="取消"
+                >
+                  <a-button type="link" danger size="small">删除</a-button>
+                </a-popconfirm>
+              </a-space>
+            </template>
+          </template>
+        </a-table>
+      </a-card>
+    </div>
+
+    <div v-else class="org-content">
       <div class="tree-panel">
         <a-card class="tree-card" :bordered="false">
           <a-spin :spinning="store.loading">
@@ -441,6 +546,12 @@ const expandedKeys = ref<number[]>([]);
 const selectedKeys = ref<number[]>([]);
 let expandedKeysDirty = false;
 
+const viewMode = ref<'tree' | 'list'>('tree');
+const viewOptions = [
+  { label: '🌳 树+详情视图', value: 'tree' },
+  { label: '📋 列表视图', value: 'list' },
+];
+
 const formState = reactive<Department>({
   name: '',
   code: '',
@@ -537,6 +648,38 @@ const getLevelIcon = (levelType?: number) => {
     default: return ApartmentOutlined;
   }
 };
+
+const getLevelTagColor = (levelType?: number) => {
+  switch (levelType) {
+    case 1: return 'geekblue';
+    case 2: return 'blue';
+    case 3: return 'cyan';
+    case 4: return 'purple';
+    default: return 'default';
+  }
+};
+
+const tableColumns = [
+  { title: '部门名称', dataIndex: 'name', key: 'name', width: '18%', sorter: (a: any, b: any) => a.name.localeCompare(b.name, 'zh') },
+  { title: '部门编码', dataIndex: 'code', key: 'code', width: '12%', sorter: (a: any, b: any) => a.code.localeCompare(b.code) },
+  { title: '上级部门', dataIndex: 'parentName', key: 'parentName', width: '12%' },
+  { title: '负责人 / 副负责人', key: 'leader', width: '13%' },
+  { title: '人员编制', key: 'headcount', width: '18%' },
+  { title: '层级', key: 'levelType', width: '8%' },
+  { title: '状态', key: 'status', width: '7%' },
+  { title: '创建时间', key: 'createTime', width: '12%', sorter: (a: any, b: any) => new Date(a.createTime).getTime() - new Date(b.createTime).getTime() },
+  { title: '操作', key: 'action', width: '22%', align: 'center' as const, fixed: 'right' as const },
+];
+
+const filteredFlatList = computed(() => {
+  if (!searchKeyword.value) return store.departmentsFlat;
+  const kw = searchKeyword.value.toLowerCase();
+  return store.departmentsFlat.filter(
+    (d) =>
+      (d.code && d.code.toLowerCase().includes(kw)) ||
+      (d.name && d.name.toLowerCase().includes(kw))
+  );
+});
 
 const getLevelTypeName = (levelType?: number) => {
   switch (levelType) {
@@ -685,6 +828,26 @@ const validateCodeUnique: Rule['validator'] = async (_rule: any, value: string) 
   return Promise.resolve();
 };
 
+const viewModeToListThenDetail = async (record: Department) => {
+  viewMode.value = 'tree';
+  selectedKeys.value = [record.id as number];
+  const ensureExpanded = (items: Department[], targetId: number, parents: number[] = []): number[] | null => {
+    for (const item of items) {
+      if (item.id === targetId) return parents;
+      if (item.children) {
+        const result = ensureExpanded(item.children, targetId, [...parents, item.id as number]);
+        if (result) return result;
+      }
+    }
+    return null;
+  };
+  const parents = ensureExpanded(store.departmentsTree, record.id as number);
+  if (parents) {
+    expandedKeys.value = Array.from(new Set([...expandedKeys.value, ...parents]));
+  }
+  await loadDetail(record.id as number);
+};
+
 const showModal = (record?: Department, parentId?: number) => {
   if (record) {
     isEdit.value = true;
@@ -822,6 +985,79 @@ const handlePreviewSnapshot = async (record: any) => {
 .add-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+}
+
+.view-toggle-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.view-hint {
+  font-size: 13px;
+  color: #8c8c8c;
+}
+
+.list-view {
+  min-height: 600px;
+}
+
+.list-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.table-dept-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.table-dept-name .disabled {
+  color: #bfbfbf;
+  text-decoration: line-through;
+}
+
+.level-icon-sm {
+  color: #1890ff;
+  font-size: 14px;
+}
+
+.dept-code-cell {
+  font-family: 'SF Mono', Consolas, Monaco, monospace;
+  font-size: 12px;
+  background: #f5f5f5;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #595959;
+}
+
+.deputy-leader {
+  color: #8c8c8c;
+}
+
+.headcount-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.headcount-cell .danger {
+  color: #ff4d4f;
+  font-weight: 700;
+}
+
+.headcount-cell .divider {
+  color: #bfbfbf;
+  margin: 0 2px;
+}
+
+.time-cell {
+  font-size: 12px;
+  color: #8c8c8c;
 }
 
 .org-content {

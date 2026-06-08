@@ -7,6 +7,7 @@ import com.example.employee.entity.UserTreeState;
 import com.example.employee.mapper.UserTreeStateMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +17,8 @@ import java.util.List;
 @Service
 public class UserTreeStateService extends ServiceImpl<UserTreeStateMapper, UserTreeState> {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public TreeStateDTO getTreeState(Long userId, String treeKey) {
         LambdaQueryWrapper<UserTreeState> wrapper = new LambdaQueryWrapper<>();
