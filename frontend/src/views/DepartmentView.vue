@@ -42,7 +42,7 @@
         <a-table
           :columns="tableColumns"
           :data-source="filteredFlatList"
-          :pagination="{ pageSize: 10, showSizeChanger: true, showTotal: (t) => `共 ${t} 个部门` }"
+          :pagination="{ pageSize: 10, showSizeChanger: true, showTotal: (total: number) => `共 ${total} 个部门` }"
           row-key="id"
           size="middle"
           :scroll="{ x: 1200 }"
@@ -100,9 +100,8 @@
                 <a-button type="link" size="small" @click="showModal(record)">编辑</a-button>
                 <a-divider type="vertical" />
                 <a-button
-                  type="link"
                   size="small"
-                  :type="record.enabled ? 'default' : 'primary'"
+                  :type="record.enabled ? 'link' : 'primary'"
                   @click="handleToggle(record)"
                 >
                   {{ record.enabled ? '停用' : '启用' }}

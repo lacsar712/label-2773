@@ -18,7 +18,7 @@
                 :disabled="isEmployeeRole || !employeeStore.employees.length"
                 placeholder="请选择员工"
                 show-search
-                :filter-option="(input, option) => (option?.children as string)?.toLowerCase().includes(input.toLowerCase())"
+                :filter-option="filterEmployeeOption"
                 @change="handleEmployeeChange"
               >
                 <a-select-option
@@ -104,11 +104,11 @@
                     <span class="status-value">
                       <a-tag v-if="todayStatus" :color="getStatusColor(attendanceStore.todayRecord?.status)">
                         {{ getStatusText(attendanceStore.todayRecord?.status) }}
-                        <span v-if="attendanceStore.todayRecord?.lateMinutes > 0" style="margin-left: 4px;">
-                          (迟到{{ attendanceStore.todayRecord.lateMinutes }}分钟)
+                        <span v-if="(attendanceStore.todayRecord?.lateMinutes ?? 0) > 0" style="margin-left: 4px;">
+                          (迟到{{ attendanceStore.todayRecord?.lateMinutes }}分钟)
                         </span>
-                        <span v-if="attendanceStore.todayRecord?.earlyMinutes > 0" style="margin-left: 4px;">
-                          (早退{{ attendanceStore.todayRecord.earlyMinutes }}分钟)
+                        <span v-if="(attendanceStore.todayRecord?.earlyMinutes ?? 0) > 0" style="margin-left: 4px;">
+                          (早退{{ attendanceStore.todayRecord?.earlyMinutes }}分钟)
                         </span>
                       </a-tag>
                       <a-tag v-else color="default">未打卡</a-tag>
@@ -227,6 +227,11 @@ const locationLoading = ref(false);
 const isEmployeeRole = computed(() => {
   return authStore.hasRole('EMPLOYEE') && !authStore.hasRole(['ADMIN', 'HR']);
 });
+
+const filterEmployeeOption = (input: string, option?: { children?: unknown }) => {
+  const label = String(option?.children ?? '');
+  return label.toLowerCase().includes(input.toLowerCase());
+};
 
 const todayStatus = computed(
   () =>

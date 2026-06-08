@@ -159,12 +159,14 @@ INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_f
 ('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', 'admin@example.com', 1, 1, 1);
 
 -- 插入测试HR账号（用户名: hr, 密码: hr123456）
+-- BCrypt加密后的 hr123456: $2a$10$h3X2e6Pa5gASllO9E.jgNemxHIbfz5GM..CbZJROZ1LfaLZlmGHAC
 INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
-('hr', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'HR管理员', 'hr@example.com', 2, 1, 1);
+('hr', '$2a$10$h3X2e6Pa5gASllO9E.jgNemxHIbfz5GM..CbZJROZ1LfaLZlmGHAC', 'HR管理员', 'hr@example.com', 2, 1, 1);
 
 -- 插入测试普通员工账号（用户名: employee, 密码: emp123456）
+-- BCrypt加密后的 emp123456: $2a$10$qBpVYMZ6PdIaGnjWd9TlfOwPm9Vcp6cfTwi.P0ImXhvBwRBywXCMW
 INSERT INTO sys_user (username, password, nickname, email, role_id, status, is_first_login) VALUES
-('employee', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '普通员工', 'employee@example.com', 3, 1, 1);
+('employee', '$2a$10$qBpVYMZ6PdIaGnjWd9TlfOwPm9Vcp6cfTwi.P0ImXhvBwRBywXCMW', '普通员工', 'employee@example.com', 3, 1, 1);
 
 -- ==================== 考勤模块 ====================
 

@@ -186,7 +186,7 @@ public class DashboardService {
         for (YearMonth ym = start; !ym.isAfter(end); ym = ym.plusMonths(1)) {
             final YearMonth currentMonth = ym;
             TurnoverTrendDTO dto = new TurnoverTrendDTO();
-            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM")));
 
             long hires = employees.stream()
                     .filter(e -> e.getHireDate() != null && YearMonth.from(e.getHireDate()).equals(currentMonth))
@@ -225,7 +225,7 @@ public class DashboardService {
         for (YearMonth ym = start; !ym.isAfter(end); ym = ym.plusMonths(1)) {
             final YearMonth currentMonth = ym;
             MonthlyStatDTO dto = new MonthlyStatDTO();
-            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM")));
             long count = employees.stream()
                     .filter(e -> e.getHireDate() != null && YearMonth.from(e.getHireDate()).equals(currentMonth))
                     .count();
