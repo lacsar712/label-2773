@@ -57,7 +57,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/doc.html",
                                 "/webjars/**",
-                                "/favicon.ico"
+                                "/favicon.ico",
+                                "/uploads/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

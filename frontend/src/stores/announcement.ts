@@ -152,5 +152,20 @@ export const useAnnouncementStore = defineStore('announcement', {
       this.readStats = res.data;
       return res.data;
     },
+
+    async uploadImage(file: File) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await request.post<any, Result<{ url: string; filename: string; size: string }>>(
+        '/upload/image',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      return res.data;
+    },
   },
 });

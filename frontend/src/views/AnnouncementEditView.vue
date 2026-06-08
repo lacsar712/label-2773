@@ -114,12 +114,60 @@
             </a-col>
           </a-row>
 
-          <a-form-item label="封面图URL">
-            <a-input
-              v-model:value="formState.coverImage"
-              placeholder="请输入封面图URL（可选）"
-            />
-            <div v-if="formState.coverImage" class="cover-preview">
+          <a-form-item label="封面图">
+            <a-radio-group v-model:value="coverInputMode" size="small" style="margin-bottom: 12px">
+              <a-radio-button value="upload">
+                <UploadOutlined /> 本地上传
+              </a-radio-button>
+              <a-radio-button value="url">
+                图片链接
+              </a-radio-button>
+            </a-radio-group>
+
+            <div v-if="coverInputMode === 'upload'" class="upload-section">
+              <a-upload
+                name="file"
+                :show-upload-list="false"
+                :before-upload="beforeCoverUpload"
+                :custom-request="handleCoverUpload"
+                accept="image/*"
+                :disabled="uploading"
+              >
+                <div class="upload-area">
+                  <div v-if="formState.coverImage" class="cover-preview-wrap">
+                    <img :src="formState.coverImage" alt="封面图" class="cover-preview-img" />
+                    <div class="cover-mask">
+                      <span>点击更换封面</span>
+                    </div>
+                  </div>
+                  <div v-else class="upload-placeholder">
+                    <UploadOutlined class="upload-icon" />
+                    <div class="upload-text">
+                      {{ uploading ? '上传中...' : '点击或拖拽上传封面图' }}
+                    </div>
+                    <div class="upload-hint">支持 JPG、PNG、GIF、WebP 格式，大小不超过 10MB</div>
+                  </div>
+                </div>
+              </a-upload>
+              <a-button
+                v-if="formState.coverImage"
+                type="link"
+                danger
+                style="margin-top: 8px"
+                @click="clearCoverImage"
+              >
+                <DeleteOutlined /> 移除封面
+              </a-button>
+            </div>
+
+            <div v-else class="url-section">
+              <a-input
+                v-model:value="formState.coverImage"
+                placeholder="请输入封面图的完整URL地址"
+              />
+            </div>
+
+            <div v-if="formState.coverImage && coverInputMode === 'url'" class="cover-preview">
               <img :src="formState.coverImage" alt="封面预览" />
             </div>
           </a-form-item>
@@ -221,6 +269,8 @@ import {
   SaveOutlined,
   EyeOutlined,
   SendOutlined,
+  UploadOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons-vue';
 import { useAnnouncementStore, type Announcement, type VisibilityTarget } from '../stores/announcement';
 import { useDepartmentStore } from '../stores/department';
@@ -236,6 +286,8 @@ const formRef = ref();
 const isEdit = computed(() => !!route.params.id);
 const editId = computed(() => Number(route.params.id));
 const previewModalOpen = ref(false);
+const uploading = ref(false);
+const coverInputMode = ref<'upload' | 'url'>('upload');
 
 const formState = reactive<Announcement>({
   title: '',
@@ -300,6 +352,42 @@ const renderMarkdown = (text: string) => {
     .replace(/\n\n/g, '</p><p>')
     .replace(/\n/g, '<br/>');
   return '<p>' + html + '</p>';
+};
+
+const beforeCoverUpload = (file: File) => {
+  const isImage = file.type.startsWith('image/');
+  if (!isImage) {
+    message.error('只能上传图片文件!');
+    return false;
+  }
+  const isLt10M = file.size / 1024 / 1024 < 10;
+  if (!isLt10M) {
+    message.error('图片大小不能超过10MB!');
+    return false;
+  }
+  return true;
+};
+
+const handleCoverUpload = async (options: any) => {
+  const { file } = options;
+  uploading.value = true;
+  try {
+    const result = await announcementStore.uploadImage(file);
+    if (result && result.url) {
+      formState.coverImage = result.url;
+      message.success('封面图上传成功');
+    } else {
+      message.error('上传失败，请重试');
+    }
+  } catch (error: any) {
+    message.error(error?.message || '上传失败，请重试');
+  } finally {
+    uploading.value = false;
+  }
+};
+
+const clearCoverImage = () => {
+  formState.coverImage = '';
 };
 
 const handleDeptChange = () => {
@@ -536,6 +624,87 @@ onMounted(async () => {
 .cover-preview img {
   max-height: 200px;
   border-radius: 8px;
+}
+
+.upload-section {
+  margin-top: 8px;
+}
+
+.upload-area {
+  cursor: pointer;
+  width: 100%;
+  max-width: 400px;
+}
+
+.upload-placeholder {
+  border: 2px dashed #d9d9d9;
+  border-radius: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  background: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.upload-placeholder:hover {
+  border-color: #1890ff;
+  background: #f0f7ff;
+}
+
+.upload-icon {
+  font-size: 48px;
+  color: #8c8c8c;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.upload-text {
+  font-size: 15px;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.cover-preview-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+}
+
+.cover-preview-img {
+  width: 100%;
+  display: block;
+}
+
+.cover-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cover-mask span {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cover-preview-wrap:hover .cover-mask {
+  opacity: 1;
 }
 
 .save-draft-btn,
