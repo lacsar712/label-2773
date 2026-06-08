@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, h } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
-import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined, NotificationOutlined, BellOutlined } from '@ant-design/icons-vue';
+import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined, NotificationOutlined, BellOutlined, SafetyOutlined } from '@ant-design/icons-vue';
 import { Modal, message } from 'ant-design-vue';
 import { useAuthStore } from './stores/auth';
 
@@ -82,6 +82,12 @@ const menuItems = computed(() => {
     key: '/announcements',
     icon: BellOutlined,
     label: '公告通知',
+    roles: ['ADMIN', 'HR', 'EMPLOYEE'],
+  });
+  items.push({
+    key: '/login-logs',
+    icon: SafetyOutlined,
+    label: '登录日志',
     roles: ['ADMIN', 'HR', 'EMPLOYEE'],
   });
   if (authStore.hasRole(['ADMIN', 'HR'])) {

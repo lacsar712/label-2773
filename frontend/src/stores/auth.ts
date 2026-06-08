@@ -29,6 +29,7 @@ interface UserInfo {
   roleId: number;
   roleCode: string;
   roleName: string;
+  isFirstLogin?: boolean;
 }
 
 interface LoginResponse {
@@ -67,6 +68,9 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn(state): boolean {
       return !!state.accessToken;
     },
+    isFirstLogin(state): boolean {
+      return state.userInfo?.isFirstLogin ?? false;
+    },
   },
   actions: {
     hasRole(roles: string | string[]): boolean {
@@ -94,6 +98,7 @@ export const useAuthStore = defineStore('auth', {
         roleId: 0,
         roleCode: data.roleCode,
         roleName: data.roleName,
+        isFirstLogin: data.isFirstLogin,
       };
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(this.userInfo));
       return data;
@@ -107,6 +112,10 @@ export const useAuthStore = defineStore('auth', {
     async changePassword(data: ChangePasswordRequest) {
       await request.post<any, Result<void>>('/auth/change-password', data);
       message.success('密码修改成功');
+      if (this.userInfo) {
+        this.userInfo.isFirstLogin = false;
+        localStorage.setItem(USER_INFO_KEY, JSON.stringify(this.userInfo));
+      }
     },
     async logout() {
       try {

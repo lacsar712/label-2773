@@ -25,6 +25,7 @@ import AnnouncementView from '../views/AnnouncementView.vue';
 import AnnouncementManageView from '../views/AnnouncementManageView.vue';
 import AnnouncementEditView from '../views/AnnouncementEditView.vue';
 import AnnouncementDetailView from '../views/AnnouncementDetailView.vue';
+import LoginLogView from '../views/LoginLogView.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -46,6 +47,12 @@ const routes: RouteRecordRaw[] = [
     name: 'change-password',
     component: ChangePasswordView,
     meta: { title: '修改密码', requiresAuth: true },
+  },
+  {
+    path: '/login-logs',
+    name: 'login-logs',
+    component: LoginLogView,
+    meta: { title: '登录日志', requiresAuth: true, roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
   },
   {
     path: '/',
@@ -226,6 +233,11 @@ router.beforeEach(async (to, _from, next) => {
 
   if (to.path === '/change-password') {
     next();
+    return;
+  }
+
+  if (authStore.userInfo?.isFirstLogin === true) {
+    next('/change-password');
     return;
   }
 

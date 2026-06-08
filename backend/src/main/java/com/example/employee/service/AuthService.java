@@ -274,6 +274,7 @@ public class AuthService {
             dto.setRoleCode(role.getRoleCode());
             dto.setRoleName(role.getRoleName());
         }
+        dto.setIsFirstLogin(user.getIsFirstLogin() != null && user.getIsFirstLogin() == 1);
         return dto;
     }
 
