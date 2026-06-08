@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, h } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { TeamOutlined, UserOutlined, DashboardOutlined, LogoutOutlined, KeyOutlined, ClockCircleOutlined, CalendarOutlined, FormOutlined, AuditOutlined, BarChartOutlined, RestOutlined, CheckCircleOutlined, MoneyCollectOutlined, FileTextOutlined, WalletOutlined, PieChartOutlined, SolutionOutlined, UserAddOutlined, ProfileOutlined, NotificationOutlined, BellOutlined } from '@ant-design/icons-vue';
-import { Dropdown, Modal, message } from 'ant-design-vue';
+import { Modal, message } from 'ant-design-vue';
 import { useAuthStore } from './stores/auth';
+
+type MenuItem = {
+  key: string;
+  icon: typeof DashboardOutlined;
+  label: string;
+  roles?: string[];
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -19,7 +26,7 @@ const showLayout = computed(() => {
 });
 
 const menuItems = computed(() => {
-  const items = [
+  const items: MenuItem[] = [
     {
       key: '/',
       icon: DashboardOutlined,
@@ -56,6 +63,7 @@ const menuItems = computed(() => {
       key: '/leave/approval',
       icon: CheckCircleOutlined,
       label: '请假审批',
+      roles: ['ADMIN', 'HR', 'EMPLOYEE'],
     });
   }
   items.push({
@@ -77,69 +85,39 @@ const menuItems = computed(() => {
     roles: ['ADMIN', 'HR', 'EMPLOYEE'],
   });
   if (authStore.hasRole(['ADMIN', 'HR'])) {
-    items.push({
-      key: '/employees',
-      icon: UserOutlined,
-      label: '员工管理',
-    });
-    items.push({
-      key: '/departments',
-      icon: TeamOutlined,
-      label: '部门管理',
-    });
-    items.push({
-      key: '/attendance/approval',
-      icon: AuditOutlined,
-      label: '补卡审批',
-    });
-    items.push({
-      key: '/attendance/reports',
-      icon: BarChartOutlined,
-      label: '月度报表',
-    });
-    items.push({
-      key: '/salary/manage',
-      icon: MoneyCollectOutlined,
-      label: '薪资管理',
-    });
-    items.push({
-      key: '/salary/templates',
-      icon: FileTextOutlined,
-      label: '薪资模板',
-    });
-    items.push({
-      key: '/salary/report',
-      icon: PieChartOutlined,
-      label: '人力成本',
-    });
-    items.push({
-      key: '/onboarding/templates',
-      icon: SolutionOutlined,
-      label: '入职模板管理',
-    });
-    items.push({
-      key: '/onboarding/manage',
-      icon: UserAddOutlined,
-      label: '入职清单管理',
-    });
-    items.push({
-      key: '/admin/announcements',
-      icon: NotificationOutlined,
-      label: '公告管理',
-    });
+    items.push(
+      { key: '/employees', icon: UserOutlined, label: '员工管理', roles: ['ADMIN', 'HR'] },
+      { key: '/departments', icon: TeamOutlined, label: '部门管理', roles: ['ADMIN', 'HR'] },
+      { key: '/attendance/approval', icon: AuditOutlined, label: '补卡审批', roles: ['ADMIN', 'HR'] },
+      { key: '/attendance/reports', icon: BarChartOutlined, label: '月度报表', roles: ['ADMIN', 'HR'] },
+      { key: '/salary/manage', icon: MoneyCollectOutlined, label: '薪资管理', roles: ['ADMIN', 'HR'] },
+      { key: '/salary/templates', icon: FileTextOutlined, label: '薪资模板', roles: ['ADMIN', 'HR'] },
+      { key: '/salary/report', icon: PieChartOutlined, label: '人力成本', roles: ['ADMIN', 'HR'] },
+      { key: '/onboarding/templates', icon: SolutionOutlined, label: '入职模板管理', roles: ['ADMIN', 'HR'] },
+      { key: '/onboarding/manage', icon: UserAddOutlined, label: '入职清单管理', roles: ['ADMIN', 'HR'] },
+      { key: '/admin/announcements', icon: NotificationOutlined, label: '公告管理', roles: ['ADMIN', 'HR'] },
+    );
   }
   return items;
 });
 
+const antdMenuItems = computed(() =>
+  menuItems.value.map((item) => ({
+    key: item.key,
+    label: item.label,
+    icon: () => h(item.icon),
+  }))
+);
+
 const userMenuItems = [
   {
     key: 'changePassword',
-    icon: KeyOutlined,
+    icon: () => h(KeyOutlined),
     label: '修改密码',
   },
   {
     key: 'logout',
-    icon: LogoutOutlined,
+    icon: () => h(LogoutOutlined),
     label: '退出登录',
   },
 ];
@@ -161,6 +139,10 @@ async function handleUserMenuClick({ key }: { key: string }) {
     router.push('/change-password');
   }
 }
+
+function handleMenuClick({ key }: { key: string }) {
+  router.push(key);
+}
 </script>
 
 <template>
@@ -175,13 +157,9 @@ async function handleUserMenuClick({ key }: { key: string }) {
         v-model:selectedKeys="selectedKey"
         theme="dark"
         mode="inline"
-        :items="menuItems"
-        router
-      >
-        <template #icon="{ icon }">
-          <component :is="icon" />
-        </template>
-      </a-menu>
+        :items="antdMenuItems"
+        @click="handleMenuClick"
+      />
     </a-layout-sider>
     <a-layout>
       <a-layout-header class="header">

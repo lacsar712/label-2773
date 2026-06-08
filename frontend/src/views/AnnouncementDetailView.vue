@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <div class="content-wrapper">
-      <a-card class="main-card" :bordered="false" v-if="announcementStore.currentAnnouncement">
+      <a-card class="main-card" :bordered="false" v-if="announcement">
         <div class="back-section">
           <a-button type="link" @click="goBack">
             <ArrowLeftOutlined /> 返回列表
@@ -33,7 +33,7 @@
             <CalendarOutlined /> 生效时间：{{ formatTime(announcement.effectiveTime) }}
           </span>
           <span class="meta-item" v-if="announcement.expireTime">
-            <StopwatchOutlined /> 过期时间：{{ formatTime(announcement.expireTime) }}
+            <FieldTimeOutlined /> 过期时间：{{ formatTime(announcement.expireTime) }}
           </span>
           <span class="meta-item" v-if="announcement.totalTargetCount">
             <EyeOutlined /> 阅读：{{ announcement.readCount || 0 }}/{{ announcement.totalTargetCount }}
@@ -60,7 +60,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import {
@@ -70,7 +70,7 @@ import {
   UserOutlined,
   ClockCircleOutlined,
   CalendarOutlined,
-  StopwatchOutlined,
+  FieldTimeOutlined,
   EyeOutlined,
 } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';

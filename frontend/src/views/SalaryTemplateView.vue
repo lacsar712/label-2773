@@ -194,7 +194,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useSalaryStore, type SalaryTemplate } from '../stores/salary';
 import { useDepartmentStore } from '../stores/department';
 import { useEmployeeStore } from '../stores/employee';
-import { message, Modal } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 
 const salaryStore = useSalaryStore();

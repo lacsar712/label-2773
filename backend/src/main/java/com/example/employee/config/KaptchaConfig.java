@@ -32,7 +32,7 @@ public class KaptchaConfig {
 
         properties.setProperty("kaptcha.obscurificator.impl", "com.google.code.kaptcha.impl.WaterRipple");
 
-        properties.setProperty("kaptcha.background.clear.from", "light_gray");
+        properties.setProperty("kaptcha.background.clear.from", "lightGray");
         properties.setProperty("kaptcha.background.clear.to", "white");
 
         properties.setProperty("kaptcha.word.impl", "com.google.code.kaptcha.text.impl.DefaultWordRenderer");

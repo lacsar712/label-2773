@@ -31,7 +31,6 @@
         <a-card class="tree-card" :bordered="false">
           <a-spin :spinning="store.loading">
             <a-tree
-              ref="treeRef"
               :tree-data="treeData"
               :field-names="{ title: 'name', key: 'id', children: 'children' }"
               :expanded-keys="expandedKeys"
@@ -119,7 +118,7 @@
                     <template #icon><edit-outlined /></template>
                     编辑
                   </a-button>
-                  <a-button v-permission="['ADMIN']" @click="showModal(null, store.currentDetail!.department.id)">
+                  <a-button v-permission="['ADMIN']" @click="showModal(undefined, store.currentDetail!.department.id)">
                     <template #icon><folder-add-outlined /></template>
                     添加子部门
                   </a-button>
@@ -412,7 +411,7 @@ import {
   PlusOutlined, EditOutlined, DeleteOutlined, CameraOutlined,
   UserOutlined, TeamOutlined, ApartmentOutlined, HistoryOutlined,
   ArrowRightOutlined, FolderAddOutlined,
-  BankOutlined, BuildingOutlined, BulbOutlined,
+  BankOutlined, BuildOutlined, BulbOutlined,
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -423,7 +422,6 @@ const authStore = useAuthStore();
 
 const hasPermission = computed(() => authStore.hasRole('ADMIN'));
 
-const treeRef = ref();
 const modalVisible = ref(false);
 const snapshotModalVisible = ref(false);
 const previewModalVisible = ref(false);
@@ -533,7 +531,7 @@ const snapshotColumns = [
 const getLevelIcon = (levelType?: number) => {
   switch (levelType) {
     case 1: return BankOutlined;
-    case 2: return BuildingOutlined;
+    case 2: return BuildOutlined;
     case 3: return TeamOutlined;
     case 4: return BulbOutlined;
     default: return ApartmentOutlined;
@@ -663,7 +661,6 @@ const onDragEnter = (_info: any) => {
 const onDrop = async (info: any) => {
   const dropKey = info.node.eventKey;
   const dragKey = info.dragNode.eventKey;
-  const dropPosition = info.dropPosition;
   const dropToGap = info.dropToGap;
 
   let targetParentId: number | null;

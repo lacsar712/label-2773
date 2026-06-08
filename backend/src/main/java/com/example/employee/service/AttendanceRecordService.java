@@ -36,6 +36,9 @@ public class AttendanceRecordService extends ServiceImpl<AttendanceRecordMapper,
     @Autowired
     private EmployeeService employeeService;
 
+    @Autowired
+    private DepartmentService departmentService;
+
     @Transactional
     public ClockInResponseDTO checkIn(ClockInRequestDTO request) {
         LocalDate today = LocalDate.now();
@@ -283,7 +286,7 @@ public class AttendanceRecordService extends ServiceImpl<AttendanceRecordMapper,
                 .map(Employee::getDepartmentId)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, String> deptMap = employeeService.departmentService.listByIds(deptIds).stream()
+        Map<Long, String> deptMap = departmentService.listByIds(deptIds).stream()
                 .collect(Collectors.toMap(d -> d.getId(), d -> d.getName()));
 
         for (AttendanceRecord r : records) {

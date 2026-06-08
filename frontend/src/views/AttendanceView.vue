@@ -197,10 +197,10 @@ const getStatusText = (status?: number) => {
   }
 };
 
-const getCalendarDotColor = (value: dayjs.Dayjs) => {
+const getCalendarDotColor = (value: dayjs.Dayjs): string | undefined => {
   const dateStr = value.format('YYYY-MM-DD');
   const item = attendanceStore.calendarData.find((d) => d.attendanceDate === dateStr);
-  if (!item || item.status === null || item.status === undefined) return null;
+  if (!item || item.status === null || item.status === undefined) return undefined;
   switch (item.status) {
     case 0: return '#52c41a';
     case 1:
@@ -257,7 +257,7 @@ watch(
   () => employeeStore.employees,
   (emps) => {
     if (emps.length > 0 && !selectedEmployeeId.value) {
-      selectedEmployeeId.value = emps[0].id;
+      selectedEmployeeId.value = emps[0]!.id;
       loadEmployeeData();
     }
   },

@@ -350,7 +350,7 @@ const handleArchive = (record: Announcement) => {
     title: '确认归档',
     content: '确定要归档这篇公告吗？归档后将不再在列表中显示。',
     okText: '确定',
-    okType: 'warning' as const,
+    okButtonProps: { danger: true },
     cancelText: '取消',
     onOk: async () => {
       const result = await announcementStore.archive(record.id!);

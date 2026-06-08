@@ -260,7 +260,7 @@ watch(
   () => employeeStore.employees,
   (emps) => {
     if (emps.length > 0 && !filterEmployeeId.value && !canExport.value) {
-      filterEmployeeId.value = emps[0].id;
+      filterEmployeeId.value = emps[0]!.id;
       fetchData();
     }
   },

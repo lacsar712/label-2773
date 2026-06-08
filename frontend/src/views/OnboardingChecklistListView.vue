@@ -187,7 +187,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useOnboardingChecklistStore, type ChecklistGenerateDTO } from '../stores/onboardingChecklist';
 import { useOnboardingTemplateStore } from '../stores/onboardingTemplate';
-import { useEmployeeStore, type Employee } from '../stores/employee';
+import { useEmployeeStore } from '../stores/employee';
 import { UserAddOutlined } from '@ant-design/icons-vue';
 
 const router = useRouter();
@@ -226,7 +226,7 @@ const filteredChecklists = computed(() => {
 const availableEmployees = computed(() => {
   const checklistEmployeeIds = new Set(checklistStore.checklists.map((c) => c.employeeId));
   return employeeStore.employees.filter(
-    (e) => !checklistEmployeeIds.has(e.id) && (e.status === 1 || e.status === 2 || e.status === 3)
+    (e) => e.id !== undefined && !checklistEmployeeIds.has(e.id) && (e.status === 1 || e.status === 2 || e.status === 3)
   );
 });
 

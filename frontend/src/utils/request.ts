@@ -1,11 +1,11 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { message, Modal } from 'ant-design-vue';
 import { useAuthStore } from '../stores/auth';
 import router from '../router';
 
-interface CustomAxiosRequestConfig extends AxiosRequestConfig {
+type CustomAxiosRequestConfig = InternalAxiosRequestConfig & {
   skipAuth?: boolean;
-}
+};
 
 const service = axios.create({
   baseURL: '/api',
@@ -15,13 +15,13 @@ const service = axios.create({
 let isReloginModalShown = false;
 
 service.interceptors.request.use(
-  (config: CustomAxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     const authStore = useAuthStore();
-    if (!config.skipAuth && authStore.accessToken) {
-      config.headers = config.headers || {};
-      config.headers['Authorization'] = `Bearer ${authStore.accessToken}`;
+    const customConfig = config as CustomAxiosRequestConfig;
+    if (!customConfig.skipAuth && authStore.accessToken) {
+      customConfig.headers.set('Authorization', `Bearer ${authStore.accessToken}`);
     }
-    return config;
+    return customConfig;
   },
   (error) => {
     console.error('Request error:', error);

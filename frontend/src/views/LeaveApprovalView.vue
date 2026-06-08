@@ -36,7 +36,7 @@
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'applicant'">
               <div class="applicant-info">
-                <a-avatar :style="{ backgroundColor: '#7265e6' }}" size="small">
+                <a-avatar :style="{ backgroundColor: '#7265e6' }" size="small">
                   {{ record.employeeName?.charAt(0) }}
                 </a-avatar>
                 <div class="applicant-name">{{ record.employeeName }}</div>
@@ -194,7 +194,7 @@
       :confirm-loading="leaveStore.loading"
     >
       <a-form :model="transferForm" layout="vertical">
-        <a-form-item label="转交审批人" :rules="[{ required: true, message: '请选择转交对象' }">
+        <a-form-item label="转交审批人" :rules="[{ required: true, message: '请选择转交对象' }]">
           <a-select
             v-model:value="transferForm.approverId"
             placeholder="请选择转交审批人"
@@ -227,7 +227,7 @@
       :confirm-loading="leaveStore.loading"
     >
       <a-form :model="addSignForm" layout="vertical">
-        <a-form-item label="加签审批人" :rules="[{ required: true, message: '请选择加签对象' }">
+        <a-form-item label="加签审批人" :rules="[{ required: true, message: '请选择加签对象' }]">
           <a-select
             v-model:value="addSignForm.approverId"
             placeholder="请选择加签审批人"
@@ -457,9 +457,9 @@ const openAddSignModal = async (record: LeaveApplication) => {
 };
 
 const handleApprove = async (status: number) => {
-  if (!currentRecord.value?.id === undefined) return null;
+  if (!currentRecord.value?.id) return;
   const result = await leaveStore.approveApplication({
-    applicationId: currentRecord.value.id!,
+    applicationId: currentRecord.value.id,
     status,
     approvalRemark: approvalForm.approvalRemark,
   });

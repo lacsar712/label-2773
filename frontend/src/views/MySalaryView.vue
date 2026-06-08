@@ -202,16 +202,17 @@ function toChineseAmount(num?: number): string {
       const group = intStr.substring(start, intStr.length - g * 4);
       let groupStr = '';
       for (let i = 0; i < group.length; i++) {
-        const d = parseInt(group[i]);
+        const char = group.charAt(i);
+        const d = parseInt(char, 10);
         const u = group.length - 1 - i;
         if (d !== 0) {
-          groupStr += digits[d] + units[u];
+          groupStr += digits[d]! + (units[u] ?? '');
         } else if (groupStr && !groupStr.endsWith('零')) {
           groupStr += '零';
         }
       }
       groupStr = groupStr.replace(/零+$/, '');
-      if (groupStr) groupStr += bigUnits[g];
+      if (groupStr) groupStr += (bigUnits[g] ?? '');
       result = groupStr + result;
     }
   }

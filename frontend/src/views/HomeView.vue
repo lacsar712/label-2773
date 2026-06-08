@@ -333,7 +333,8 @@ const initBarChart = () => {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
-        const item = data[params[0].dataIndex];
+        const item = data[params[0]?.dataIndex];
+        if (!item) return '';
         return `${item.departmentName}<br/>编制使用率: ${item.headcountUsageRate.toFixed(1)}%<br/>在职: ${item.employeeCount} / ${item.headcountLimit}`;
       },
     },

@@ -239,14 +239,15 @@ function renderBarChart() {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (p: any) => {
-        const item = data[p[0].dataIndex];
+        const item = data[p[0]?.dataIndex];
+        if (!item) return '';
         return `${item.departmentName}<br/>总成本: ¥${(item.totalCompanyCost || 0).toLocaleString()}<br/>实发: ¥${(item.totalNetSalary || 0).toLocaleString()}<br/>人均: ¥${(item.avgNetSalary || 0).toLocaleString()}`;
       },
     },
     grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: data.map((d) => d.departmentName),
+      data: data.map((d) => d.departmentName ?? ''),
       axisLabel: { color: '#595959', interval: 0, rotate: data.length > 5 ? 25 : 0, fontSize: 11 },
       axisLine: { lineStyle: { color: '#e8e8e8' } },
       axisTick: { show: false },
@@ -267,8 +268,8 @@ function renderBarChart() {
           itemStyle: {
             borderRadius: [6, 6, 0, 0],
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: CHART_COLORS[i % CHART_COLORS.length] },
-              { offset: 1, color: CHART_COLORS[(i + 2) % CHART_COLORS.length] },
+              { offset: 0, color: CHART_COLORS[i % CHART_COLORS.length]! },
+              { offset: 1, color: CHART_COLORS[(i + 2) % CHART_COLORS.length]! },
             ]),
           },
         })),

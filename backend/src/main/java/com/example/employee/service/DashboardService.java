@@ -28,10 +28,9 @@ public class DashboardService {
         List<Employee> allEmployees = employeeService.list();
         List<Department> allDepartments = departmentService.list();
 
-        Set<Long> deptFilterIds = null;
-        if (departmentId != null) {
-            deptFilterIds = collectAllDescendantIds(allDepartments, departmentId);
-        }
+        final Set<Long> deptFilterIds = departmentId != null
+                ? collectAllDescendantIds(allDepartments, departmentId)
+                : null;
 
         List<Employee> filteredEmployees = deptFilterIds == null
                 ? allEmployees
@@ -164,21 +163,22 @@ public class DashboardService {
         Map<Long, String> deptNameMap = new HashMap<>();
 
         for (YearMonth ym = start; !ym.isAfter(end); ym = ym.plusMonths(1)) {
+            final YearMonth currentMonth = ym;
             TurnoverTrendDTO dto = new TurnoverTrendDTO();
-            dto.setMonth(ym.format(DateTimeFormatter.ofPattern("yyyy-MM")));
+            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM")));
 
             long hires = employees.stream()
-                    .filter(e -> e.getHireDate() != null && YearMonth.from(e.getHireDate()).equals(ym))
+                    .filter(e -> e.getHireDate() != null && YearMonth.from(e.getHireDate()).equals(currentMonth))
                     .count();
 
             long departures = employees.stream()
-                    .filter(e -> e.getLeaveDate() != null && YearMonth.from(e.getLeaveDate()).equals(ym))
+                    .filter(e -> e.getLeaveDate() != null && YearMonth.from(e.getLeaveDate()).equals(currentMonth))
                     .count();
 
             dto.setHires(hires);
             dto.setDepartures(departures);
 
-            YearMonth prevMonth = ym.minusMonths(1);
+            YearMonth prevMonth = currentMonth.minusMonths(1);
             long prevTotal = employees.stream()
                     .filter(e -> {
                         if (e.getHireDate() == null) return true;
@@ -186,7 +186,7 @@ public class DashboardService {
                     })
                     .filter(e -> {
                         if (e.getLeaveDate() == null) return true;
-                        return !YearMonth.from(e.getLeaveDate()).isBefore(ym);
+                        return !YearMonth.from(e.getLeaveDate()).isBefore(currentMonth);
                     })
                     .count();
             dto.setAttritionRate(prevTotal > 0 ? (departures * 100.0 / prevTotal) : 0.0);
@@ -202,10 +202,11 @@ public class DashboardService {
         YearMonth end = YearMonth.from(endDate != null ? endDate : LocalDate.now());
 
         for (YearMonth ym = start; !ym.isAfter(end); ym = ym.plusMonths(1)) {
+            final YearMonth currentMonth = ym;
             MonthlyStatDTO dto = new MonthlyStatDTO();
-            dto.setMonth(ym.format(DateTimeFormatter.ofPattern("yyyy-MM")));
+            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM")));
             long count = employees.stream()
-                    .filter(e -> e.getHireDate() != null && YearMonth.from(e.getHireDate()).equals(ym))
+                    .filter(e -> e.getHireDate() != null && YearMonth.from(e.getHireDate()).equals(currentMonth))
                     .count();
             dto.setCount(count);
             result.add(dto);

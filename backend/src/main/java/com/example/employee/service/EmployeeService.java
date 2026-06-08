@@ -5,6 +5,7 @@ import com.example.employee.entity.Employee;
 import com.example.employee.mapper.EmployeeMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 public class EmployeeService extends ServiceImpl<EmployeeMapper, Employee> {
 
     @Autowired
+    @Lazy
     private DepartmentService departmentService;
 
     public List<Employee> listWithDepartment() {

@@ -158,8 +158,8 @@
         </a-form-item>
         <a-form-item label="生成范围">
           <a-radio-group v-model:value="generateForm.scope">
-            <a-radio :value="all">全部在职员工</a-radio>
-            <a-radio :value="dept">指定部门</a-radio>
+            <a-radio value="all">全部在职员工</a-radio>
+            <a-radio value="dept">指定部门</a-radio>
           </a-radio-group>
         </a-form-item>
         <a-form-item label="选择部门" v-if="generateForm.scope === 'dept'">
@@ -272,7 +272,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSalaryStore, type SalaryRecord } from '../stores/salary';
 import { useDepartmentStore } from '../stores/department';
@@ -432,11 +432,18 @@ function getRecordFieldValue(record: SalaryRecord, field: string): number | unde
 }
 
 async function handleAdjust() {
-  if (!adjustForm.fieldName || adjustForm.newValue === undefined) {
+  if (!adjustForm.fieldName || adjustForm.newValue === undefined || !adjustForm.salaryRecordId) {
     message.warning('请填写完整信息');
     return;
   }
-  const result = await salaryStore.adjustField({ ...adjustForm });
+  const result = await salaryStore.adjustField({
+    salaryRecordId: adjustForm.salaryRecordId,
+    fieldName: adjustForm.fieldName,
+    fieldLabel: adjustForm.fieldLabel,
+    oldValue: adjustForm.oldValue,
+    newValue: adjustForm.newValue,
+    adjustReason: adjustForm.adjustReason,
+  });
   if (result) {
     adjustVisible.value = false;
     loadRecords();

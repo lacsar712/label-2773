@@ -244,7 +244,7 @@ watch(
   () => employeeStore.employees,
   (emps) => {
     if (emps.length > 0 && !selectedEmployeeId.value) {
-      selectedEmployeeId.value = emps[0].id;
+      selectedEmployeeId.value = emps[0]!.id;
       fetchMakeUpList();
     }
   },

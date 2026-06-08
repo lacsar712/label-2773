@@ -25,25 +25,28 @@
             v-model:value="passwordForm.oldPassword"
             size="large"
             placeholder="请输入旧密码"
-            :prefix="lockIcon"
-          />
+          >
+            <template #prefix><LockOutlined /></template>
+          </a-input-password>
         </a-form-item>
         <a-form-item name="newPassword" label="新密码">
           <a-input-password
             v-model:value="passwordForm.newPassword"
             size="large"
             placeholder="请输入新密码（6-20位）"
-            :prefix="lockIcon"
-          />
+          >
+            <template #prefix><LockOutlined /></template>
+          </a-input-password>
         </a-form-item>
         <a-form-item name="confirmPassword" label="确认新密码">
           <a-input-password
             v-model:value="passwordForm.confirmPassword"
             size="large"
             placeholder="请再次输入新密码"
-            :prefix="lockIcon"
             @pressEnter="handleSubmit"
-          />
+          >
+            <template #prefix><LockOutlined /></template>
+          </a-input-password>
         </a-form-item>
         <div class="password-strength" v-if="passwordForm.newPassword">
           <div class="strength-label">密码强度</div>
@@ -82,7 +85,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed, onMounted, h } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { message } from 'ant-design-vue';
@@ -101,8 +104,6 @@ const passwordForm = reactive({
   newPassword: '',
   confirmPassword: '',
 });
-
-const lockIcon = () => h(LockOutlined);
 
 const validateConfirmPassword = async (_rule: any, value: string) => {
   if (!value) {
@@ -177,8 +178,13 @@ const handleChangePassword = async () => {
   }
 };
 
-const handleSubmit = () => {
-  formRef.value?.submit();
+const handleSubmit = async () => {
+  try {
+    await formRef.value?.validate();
+    await handleChangePassword();
+  } catch {
+    // validation failed
+  }
 };
 
 const goBack = () => {

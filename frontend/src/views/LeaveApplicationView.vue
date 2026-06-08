@@ -288,7 +288,7 @@
             :status="getTimelineStatus()"
           >
             <a-step
-              v-for="(node, idx) in leaveStore.currentApplication.approvalNodes"
+              v-for="node in leaveStore.currentApplication.approvalNodes"
               :key="node.id"
               :title="node.nodeName"
               :description="getNodeDescription(node)"
@@ -304,7 +304,6 @@
 
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
-import dayjs from 'dayjs';
 import { message, Modal } from 'ant-design-vue';
 import type { UploadProps } from 'ant-design-vue';
 import { useLeaveStore, type LeaveApplication } from '../stores/leave';
@@ -573,7 +572,7 @@ const submitDraft = async (record: LeaveApplication) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      const result = await leaveStore.submitApplication(record.id);
+      const result = await leaveStore.submitApplication(record.id!);
       if (result) {
         fetchList();
         if (selectedEmployeeId.value) {
@@ -593,7 +592,7 @@ const handleCancel = async (record: LeaveApplication) => {
     okType: 'danger',
     cancelText: '取消',
     onOk: async () => {
-      const result = await leaveStore.cancelApplication(record.id);
+      const result = await leaveStore.cancelApplication(record.id!);
       if (result) {
         fetchList();
         if (selectedEmployeeId.value) {
@@ -622,13 +621,14 @@ watch(
   (emps) => {
     if (emps.length > 0 && !selectedEmployeeId.value) {
       if (authStore.userInfo?.employeeId) {
-        const match = emps.find((e: any) => e.id === authStore.userInfo.employeeId);
-        if (match) {
+        const employeeId = authStore.userInfo.employeeId;
+        const match = emps.find((e: any) => e.id === employeeId);
+        if (match?.id) {
           selectedEmployeeId.value = match.id;
         }
       }
       if (!selectedEmployeeId.value) {
-        selectedEmployeeId.value = emps[0].id;
+        selectedEmployeeId.value = emps[0]!.id;
       }
       handleEmployeeChange();
     }

@@ -48,17 +48,19 @@
                 v-model:value="loginForm.username"
                 size="large"
                 placeholder="请输入用户名"
-                :prefix="userIcon"
-              />
+              >
+                <template #prefix><UserOutlined /></template>
+              </a-input>
             </a-form-item>
             <a-form-item name="password">
               <a-input-password
                 v-model:value="loginForm.password"
                 size="large"
                 placeholder="请输入密码"
-                :prefix="lockIcon"
                 @pressEnter="handleSubmit"
-              />
+              >
+                <template #prefix><LockOutlined /></template>
+              </a-input-password>
             </a-form-item>
             <a-form-item name="captcha">
               <div class="captcha-wrapper">
@@ -66,9 +68,10 @@
                   v-model:value="loginForm.captcha"
                   size="large"
                   placeholder="请输入验证码"
-                  :prefix="safetyIcon"
                   style="flex: 1;"
-                />
+                >
+                  <template #prefix><SafetyOutlined /></template>
+                </a-input>
                 <div class="captcha-img" @click="refreshCaptcha" title="点击刷新">
                   <img v-if="captchaData.img" :src="captchaData.img" alt="验证码" />
                   <span v-else>加载中...</span>
@@ -110,7 +113,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted, h } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { message } from 'ant-design-vue';
@@ -140,10 +143,6 @@ const loginForm = reactive({
   captcha: '',
   uuid: '',
 });
-
-const userIcon = () => h(UserOutlined);
-const lockIcon = () => h(LockOutlined);
-const safetyIcon = () => h(SafetyOutlined);
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],

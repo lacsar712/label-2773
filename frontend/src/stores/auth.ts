@@ -102,6 +102,7 @@ export const useAuthStore = defineStore('auth', {
       const res = await request.get<any, Result<UserInfo>>('/auth/user-info');
       this.userInfo = res.data;
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(res.data));
+      return res.data;
     },
     async changePassword(data: ChangePasswordRequest) {
       await request.post<any, Result<void>>('/auth/change-password', data);

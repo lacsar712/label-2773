@@ -282,7 +282,7 @@ const templateFormState = reactive<OnboardingTemplate>({
   description: undefined,
   enabled: true,
   isDefault: false,
-  items: [],
+  items: [] as TemplateItemForm[],
 });
 
 const deptSelectOptions = computed(() => {
@@ -297,10 +297,11 @@ const deptSelectOptions = computed(() => {
   return filterEnabled(deptStore.departmentsTree);
 });
 
-const filteredTemplateItems = computed(() => {
+const filteredTemplateItems = computed((): TemplateItemForm[] => {
   if (!templateFormState.items) return [];
-  if (currentStageFilter.value === 0) return templateFormState.items;
-  return templateFormState.items.filter((i) => i.stage === currentStageFilter.value);
+  const items = templateFormState.items as TemplateItemForm[];
+  if (currentStageFilter.value === 0) return items;
+  return items.filter((i) => i.stage === currentStageFilter.value);
 });
 
 const getStageText = (stage?: number) => {
@@ -419,9 +420,13 @@ const moveItemUp = (index: number) => {
     (item) => item === filteredTemplateItems.value[index - 1]
   );
   if (actualIndex !== -1 && prevActualIndex !== -1) {
-    const temp = templateFormState.items![actualIndex];
-    templateFormState.items![actualIndex] = templateFormState.items![prevActualIndex];
-    templateFormState.items![prevActualIndex] = temp;
+    const items = templateFormState.items as TemplateItemForm[];
+    const current = items[actualIndex];
+    const prev = items[prevActualIndex];
+    if (current && prev) {
+      items[actualIndex] = prev;
+      items[prevActualIndex] = current;
+    }
   }
 };
 
@@ -434,9 +439,13 @@ const moveItemDown = (index: number) => {
     (item) => item === filteredTemplateItems.value[index + 1]
   );
   if (actualIndex !== -1 && nextActualIndex !== -1) {
-    const temp = templateFormState.items![actualIndex];
-    templateFormState.items![actualIndex] = templateFormState.items![nextActualIndex];
-    templateFormState.items![nextActualIndex] = temp;
+    const items = templateFormState.items as TemplateItemForm[];
+    const current = items[actualIndex];
+    const next = items[nextActualIndex];
+    if (current && next) {
+      items[actualIndex] = next;
+      items[nextActualIndex] = current;
+    }
   }
 };
 

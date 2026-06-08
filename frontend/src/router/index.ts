@@ -1,4 +1,5 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import HomeView from '../views/HomeView.vue';
 import EmployeeView from '../views/EmployeeView.vue';
@@ -195,7 +196,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   document.title = `${to.meta.title || '员工管理系统'} - 员工管理系统`;
   const authStore = useAuthStore();
 

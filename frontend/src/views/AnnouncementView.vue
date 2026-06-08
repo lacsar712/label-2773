@@ -70,7 +70,7 @@
             :total="announcementStore.myAnnouncementListTotal"
             :show-size-changer="true"
             :show-quick-jumper="true"
-            :show-total="(total) => `共 ${total} 条公告`"
+            :show-total="(total: number) => `共 ${total} 条公告`"
             @change="handlePageChange"
           />
         </div>

@@ -314,7 +314,7 @@ public class AnnouncementService extends ServiceImpl<AnnouncementMapper, Announc
         Map<Long, Long> userToDeptMap = allEmployees.stream()
                 .filter(e -> e.getId() != null && e.getDepartmentId() != null)
                 .collect(Collectors.toMap(Employee::getId, Employee::getDepartmentId, (a, b) -> a));
-        Map<Long, Employee> emailToEmployeeMap = allEmployees.stream()
+        Map<String, Employee> emailToEmployeeMap = allEmployees.stream()
                 .filter(e -> e.getEmail() != null)
                 .collect(Collectors.toMap(Employee::getEmail, e -> e, (a, b) -> a));
         Map<String, Employee> nameToEmployeeMap = allEmployees.stream()
