@@ -127,9 +127,7 @@ const rejectFormState = reactive({
   approvalRemark: '',
 });
 
-const deptFilterOptions = computed(() => {
-  return [{ id: null as any, name: '全部部门', children: deptStore.departmentsTree }];
-});
+const deptFilterOptions = computed(() => deptStore.departmentsTree);
 
 const paginationConfig = computed(() => ({
   current: pageNum.value,
@@ -156,7 +154,15 @@ const formatDateTime = (time?: string) => {
   return dayjs(time).format('YYYY-MM-DD HH:mm');
 };
 
-const handleDeptFilterChange = () => {
+const handleDeptFilterChange = (value: any) => {
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    deptFilterId.value = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  } else if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    deptFilterId.value = value;
+  } else {
+    deptFilterId.value = null;
+  }
   pageNum.value = 1;
   fetchPendingApprovals();
 };

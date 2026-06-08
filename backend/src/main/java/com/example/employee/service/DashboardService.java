@@ -4,6 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.employee.dto.*;
 import com.example.employee.entity.Department;
 import com.example.employee.entity.Employee;
+import com.example.employee.entity.LeaveApplication;
+import com.example.employee.entity.OnboardingChecklistItem;
+import com.example.employee.mapper.LeaveApplicationMapper;
+import com.example.employee.mapper.OnboardingChecklistItemMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,13 +26,19 @@ public class DashboardService {
     @Autowired
     private DepartmentService departmentService;
 
+    @Autowired
+    private LeaveApplicationMapper leaveApplicationMapper;
+
+    @Autowired
+    private OnboardingChecklistItemMapper onboardingChecklistItemMapper;
+
     public DashboardOverviewDTO getOverview(LocalDate startDate, LocalDate endDate, Long departmentId) {
         DashboardOverviewDTO dto = new DashboardOverviewDTO();
 
         List<Employee> allEmployees = employeeService.list();
         List<Department> allDepartments = departmentService.list();
 
-        final Set<Long> deptFilterIds = departmentId != null
+        final Set<Long> deptFilterIds = departmentId != null && departmentId > 0
                 ? collectAllDescendantIds(allDepartments, departmentId)
                 : null;
 
@@ -77,8 +87,24 @@ public class DashboardService {
                 .count();
         dto.setContractExpiringSoon(contractExpiringSoon);
 
-        dto.setPendingLeaveApproval((long) (new Random().nextInt(5) + 1));
-        dto.setPendingOnboarding((long) (new Random().nextInt(3) + 1));
+        LambdaQueryWrapper<LeaveApplication> leaveQuery = new LambdaQueryWrapper<>();
+        leaveQuery.in(LeaveApplication::getStatus, Arrays.asList(0, 1));
+        if (deptFilterIds != null) {
+            leaveQuery.in(LeaveApplication::getDepartmentId, deptFilterIds);
+        }
+        Long pendingLeaveApproval = leaveApplicationMapper.selectCount(leaveQuery);
+        dto.setPendingLeaveApproval(pendingLeaveApproval != null ? pendingLeaveApproval : 0L);
+
+        LambdaQueryWrapper<OnboardingChecklistItem> onboardingQuery = new LambdaQueryWrapper<>();
+        onboardingQuery.in(OnboardingChecklistItem::getStatus, Arrays.asList(0, 1));
+        if (deptFilterIds != null) {
+            List<Long> employeeIds = filteredEmployees.stream().map(Employee::getId).collect(Collectors.toList());
+            if (!employeeIds.isEmpty()) {
+                onboardingQuery.in(OnboardingChecklistItem::getEmployeeId, employeeIds);
+            }
+        }
+        Long pendingOnboarding = onboardingChecklistItemMapper.selectCount(onboardingQuery);
+        dto.setPendingOnboarding(pendingOnboarding != null ? pendingOnboarding : 0L);
 
         YearMonth lastMonth = thisMonth.minusMonths(1);
         long lastMonthTotal = activeEmployees.stream()
@@ -124,9 +150,6 @@ public class DashboardService {
                 .filter(e -> deptFilterIds == null || deptFilterIds.contains(e.getDepartmentId()))
                 .collect(Collectors.groupingBy(Employee::getDepartmentId, Collectors.counting()));
 
-        Map<Long, String> deptNameMap = allDepartments.stream()
-                .collect(Collectors.toMap(Department::getId, Department::getName));
-
         Map<Long, Integer> deptHeadcountMap = allDepartments.stream()
                 .collect(Collectors.toMap(Department::getId, d -> d.getHeadcountLimit() != null ? d.getHeadcountLimit() : 0));
 
@@ -160,12 +183,10 @@ public class DashboardService {
         YearMonth start = YearMonth.from(startDate != null ? startDate : LocalDate.now().minusMonths(11));
         YearMonth end = YearMonth.from(endDate != null ? endDate : LocalDate.now());
 
-        Map<Long, String> deptNameMap = new HashMap<>();
-
         for (YearMonth ym = start; !ym.isAfter(end); ym = ym.plusMonths(1)) {
             final YearMonth currentMonth = ym;
             TurnoverTrendDTO dto = new TurnoverTrendDTO();
-            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM")));
+            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
             long hires = employees.stream()
                     .filter(e -> e.getHireDate() != null && YearMonth.from(e.getHireDate()).equals(currentMonth))
@@ -204,7 +225,7 @@ public class DashboardService {
         for (YearMonth ym = start; !ym.isAfter(end); ym = ym.plusMonths(1)) {
             final YearMonth currentMonth = ym;
             MonthlyStatDTO dto = new MonthlyStatDTO();
-            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM")));
+            dto.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
             long count = employees.stream()
                     .filter(e -> e.getHireDate() != null && YearMonth.from(e.getHireDate()).equals(currentMonth))
                     .count();

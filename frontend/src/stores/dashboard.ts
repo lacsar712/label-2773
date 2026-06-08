@@ -85,7 +85,14 @@ export const useDashboardStore = defineStore('dashboard', {
       }
     },
     setQuery(query: DashboardQuery) {
-      this.query = { ...this.query, ...query };
+      let deptId: number | null = query.departmentId ?? null;
+      if (typeof deptId === 'string') {
+        const parsed = parseInt(deptId as any, 10);
+        deptId = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+      } else if (typeof deptId === 'number' && (!Number.isFinite(deptId) || deptId <= 0)) {
+        deptId = null;
+      }
+      this.query = { ...this.query, ...query, departmentId: deptId };
       this.saveQueryToCache();
     },
     async fetchOverview() {
@@ -94,7 +101,10 @@ export const useDashboardStore = defineStore('dashboard', {
         const params: Record<string, any> = {};
         if (this.query.startDate) params.startDate = this.query.startDate;
         if (this.query.endDate) params.endDate = this.query.endDate;
-        if (this.query.departmentId) params.departmentId = this.query.departmentId;
+        const deptId = this.query.departmentId;
+        if (typeof deptId === 'number' && Number.isFinite(deptId) && deptId > 0) {
+          params.departmentId = deptId;
+        }
 
         const res = await request.get<any, Result<DashboardOverviewDTO>>(
           `${API_URL}/overview`,
@@ -109,6 +119,13 @@ export const useDashboardStore = defineStore('dashboard', {
     },
     async refresh() {
       this.loadCachedQuery();
+      let deptId = this.query.departmentId;
+      if (typeof deptId === 'string') {
+        const parsed = parseInt(deptId as any, 10);
+        this.query.departmentId = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+      } else if (typeof deptId === 'number' && (!Number.isFinite(deptId) || deptId <= 0)) {
+        this.query.departmentId = null;
+      }
       await this.fetchOverview();
     },
   },

@@ -172,9 +172,7 @@ const columns = [
   { title: '操作', key: 'action', width: '12%', align: 'center' },
 ];
 
-const deptFilterOptions = computed(() => {
-  return [{ id: null as any, name: '全部部门', children: deptStore.departmentsTree }];
-});
+const deptFilterOptions = computed(() => deptStore.departmentsTree);
 
 const deptSelectOptions = computed(() => {
   const filterEnabled = (items: any[]): any[] => {
@@ -222,14 +220,21 @@ onMounted(async () => {
   await employeeStore.fetchEmployees();
 });
 
-const handleDeptFilterChange = (value: number | null) => {
-  if (!value) {
+const handleDeptFilterChange = (value: any) => {
+  let deptId: number | null = null;
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    deptId = value;
+  } else if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    if (Number.isFinite(parsed) && parsed > 0) deptId = parsed;
+  }
+  if (!deptId) {
     employeeStore.setDepartmentFilter([]);
     return;
   }
   const descendantIds = deptStore.collectDescendantIds(
     deptStore.flattenDepartments(deptStore.departmentsTree),
-    value
+    deptId
   );
   employeeStore.setDepartmentFilter(descendantIds);
 };

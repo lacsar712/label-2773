@@ -221,9 +221,7 @@ const dateRanges = computed(() => ({
   近一年: [dayjs().subtract(11, 'month').startOf('month'), dayjs().endOf('month')],
 }));
 
-const deptFilterOptions = computed(() => {
-  return [{ id: null as any, name: '全部部门', children: deptStore.departmentsTree }];
-});
+const deptFilterOptions = computed(() => deptStore.departmentsTree);
 
 const CHART_COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7', '#fa709a', '#fee140', '#ff9a9e'];
 
