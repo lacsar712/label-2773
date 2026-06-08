@@ -20,6 +20,7 @@ export interface OnboardingChecklistItem {
   stage: number;
   sortOrder?: number;
   isTemporary?: boolean;
+  responsibleRole?: string;
   responsibleUserId?: number;
   responsibleUserName?: string;
   dueDate: string;
@@ -132,6 +133,16 @@ export const useOnboardingChecklistStore = defineStore('onboardingChecklist', {
       this.loading = true;
       try {
         const res = await request.get<any, Result<OnboardingChecklist>>(`${API_URL}/employee/${employeeId}`);
+        this.currentChecklist = res.data;
+        return res.data;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async fetchMyChecklist() {
+      this.loading = true;
+      try {
+        const res = await request.get<any, Result<OnboardingChecklist>>(`${API_URL}/my`);
         this.currentChecklist = res.data;
         return res.data;
       } finally {

@@ -311,16 +311,25 @@ const canCompleteItem = (item: OnboardingChecklistItem) => {
   if (authStore.hasRole(['ADMIN', 'HR'])) return true;
   const currentUserId = authStore.userInfo?.userId;
   const currentEmployeeId = authStore.userInfo?.employeeId;
-  if (item.responsibleUserId && currentUserId && item.responsibleUserId === Number(currentUserId)) return true;
-  if (item.responsibleUserId && currentEmployeeId && item.responsibleUserId === Number(currentEmployeeId)) return true;
+  if (item.responsibleUserId && currentUserId && Number(item.responsibleUserId) === Number(currentUserId)) return true;
+  if (item.responsibleUserId && currentEmployeeId && Number(item.responsibleUserId) === Number(currentEmployeeId)) return true;
+  if (item.responsibleRole === 'NEW_EMPLOYEE' && authStore.hasRole('EMPLOYEE')) {
+    if (item.employeeId && currentEmployeeId && Number(item.employeeId) === Number(currentEmployeeId)) return true;
+  }
+  if (item.responsibleRole === 'MENTOR' && myChecklist.value?.mentorId) {
+    if (currentEmployeeId && Number(myChecklist.value.mentorId) === Number(currentEmployeeId)) return true;
+    if (currentUserId && Number(myChecklist.value.mentorId) === Number(currentUserId)) return true;
+  }
   return false;
 };
 
 onMounted(async () => {
-  const employeeId = authStore.userInfo?.employeeId;
-  if (employeeId) {
-    await checklistStore.fetchByEmployeeId(Number(employeeId));
+  try {
+    await authStore.fetchUserInfo();
+  } catch (e) {
+    // ignore
   }
+  await checklistStore.fetchMyChecklist();
 });
 
 const handleComplete = (item: OnboardingChecklistItem) => {

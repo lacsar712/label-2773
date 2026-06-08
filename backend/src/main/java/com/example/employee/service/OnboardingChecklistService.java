@@ -19,6 +19,9 @@ import com.example.employee.mapper.OnboardingChecklistItemMapper;
 import com.example.employee.mapper.OnboardingChecklistMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.employee.mapper.OnboardingNotificationMapper;
+import com.example.employee.mapper.EmployeeMapper;
+import com.example.employee.mapper.SysUserMapper;
+import com.example.employee.entity.SysUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +52,12 @@ public class OnboardingChecklistService extends ServiceImpl<OnboardingChecklistM
     @Autowired
     private DepartmentService departmentService;
 
+    @Autowired
+    private EmployeeMapper employeeMapper;
+
+    @Autowired
+    private SysUserMapper sysUserMapper;
+
     public List<OnboardingChecklist> listWithProgress() {
         List<OnboardingChecklist> checklists = list();
         for (OnboardingChecklist checklist : checklists) {
@@ -77,6 +86,57 @@ public class OnboardingChecklistService extends ServiceImpl<OnboardingChecklistM
             recalculateAndUpdateProgress(checklist);
         }
         return checklist;
+    }
+
+    public OnboardingChecklist getMyChecklist() {
+        UserInfoDTO currentUser = UserContext.getCurrentUser();
+        if (currentUser == null) {
+            return null;
+        }
+        Long employeeId = resolveEmployeeId(currentUser);
+        if (employeeId == null) {
+            return null;
+        }
+        return getByEmployeeId(employeeId);
+    }
+
+    private Long resolveEmployeeId(UserInfoDTO currentUser) {
+        if (currentUser.getEmployeeId() != null) {
+            return currentUser.getEmployeeId();
+        }
+        Long userId = currentUser.getUserId();
+        if (userId != null) {
+            SysUser sysUser = sysUserMapper.selectById(userId);
+            if (sysUser != null && sysUser.getEmployeeId() != null) {
+                return sysUser.getEmployeeId();
+            }
+            if (sysUser != null) {
+                LambdaQueryWrapper<Employee> empWrapper = new LambdaQueryWrapper<>();
+                boolean hasCondition = false;
+                if (sysUser.getEmail() != null && !sysUser.getEmail().isEmpty()) {
+                    empWrapper.eq(Employee::getEmail, sysUser.getEmail());
+                    hasCondition = true;
+                }
+                String nameKeyword = sysUser.getNickname() != null && !sysUser.getNickname().isEmpty()
+                        ? sysUser.getNickname() : sysUser.getUsername();
+                if (nameKeyword != null && !nameKeyword.isEmpty()) {
+                    if (hasCondition) {
+                        empWrapper.or();
+                    }
+                    empWrapper.eq(Employee::getName, nameKeyword);
+                    hasCondition = true;
+                }
+                if (hasCondition) {
+                    Employee emp = employeeMapper.selectOne(empWrapper);
+                    if (emp != null) {
+                        sysUser.setEmployeeId(emp.getId());
+                        sysUserMapper.updateById(sysUser);
+                        return emp.getId();
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private void enrichChecklistWithItems(OnboardingChecklist checklist) {
@@ -169,6 +229,7 @@ public class OnboardingChecklistService extends ServiceImpl<OnboardingChecklistM
                 item.setStage(templateItem.getStage());
                 item.setSortOrder(sortOrder++);
                 item.setIsTemporary(false);
+                item.setResponsibleRole(templateItem.getResponsibleRole());
                 item.setStatus(0);
                 item.setNotificationSent(false);
 
@@ -278,9 +339,17 @@ public class OnboardingChecklistService extends ServiceImpl<OnboardingChecklistM
         }
 
         UserInfoDTO currentUser = UserContext.getCurrentUser();
+        if (currentUser == null) {
+            throw new RuntimeException("未登录");
+        }
+
+        if (!hasPermissionToComplete(item, currentUser)) {
+            throw new RuntimeException("您没有权限完成该待办项");
+        }
+
         item.setStatus(2);
-        item.setCompletedUserId(currentUser != null ? currentUser.getUserId() : null);
-        item.setCompletedUserName(currentUser != null ? currentUser.getNickname() : null);
+        item.setCompletedUserId(currentUser.getUserId());
+        item.setCompletedUserName(currentUser.getNickname());
         item.setCompletedTime(LocalDateTime.now());
         item.setRemark(dto.getRemark());
         boolean result = checklistItemMapper.updateById(item) > 0;
@@ -294,6 +363,30 @@ public class OnboardingChecklistService extends ServiceImpl<OnboardingChecklistM
             }
         }
         return result;
+    }
+
+    private boolean hasPermissionToComplete(OnboardingChecklistItem item, UserInfoDTO currentUser) {
+        String roleCode = currentUser.getRoleCode();
+        if ("ADMIN".equals(roleCode) || "HR".equals(roleCode)) {
+            return true;
+        }
+        Long currentEmployeeId = resolveEmployeeId(currentUser);
+        if (item.getResponsibleUserId() != null && currentEmployeeId != null
+                && item.getResponsibleUserId().equals(currentEmployeeId)) {
+            return true;
+        }
+        if (item.getResponsibleUserId() != null && currentUser.getUserId() != null
+                && item.getResponsibleUserId().equals(currentUser.getUserId())) {
+            return true;
+        }
+        String responsibleRole = item.getResponsibleRole();
+        if ("NEW_EMPLOYEE".equals(responsibleRole) && "EMPLOYEE".equals(roleCode)) {
+            if (item.getEmployeeId() != null && currentEmployeeId != null
+                    && item.getEmployeeId().equals(currentEmployeeId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void recalculateAndUpdateProgress(OnboardingChecklist checklist) {
@@ -377,6 +470,7 @@ public class OnboardingChecklistService extends ServiceImpl<OnboardingChecklistM
         item.setStage(dto.getStage());
         item.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : nextSort);
         item.setIsTemporary(true);
+        item.setResponsibleRole(dto.getResponsibleUserId() != null ? "SPECIFIC" : "HR");
         item.setResponsibleUserId(dto.getResponsibleUserId());
         item.setResponsibleUserName(dto.getResponsibleUserName());
         item.setDueDate(dto.getDueDate());

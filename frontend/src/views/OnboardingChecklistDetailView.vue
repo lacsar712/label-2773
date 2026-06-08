@@ -459,8 +459,15 @@ const canCompleteItem = (item: OnboardingChecklistItem) => {
   if (authStore.hasRole(['ADMIN', 'HR'])) return true;
   const currentUserId = authStore.userInfo?.userId;
   const currentEmployeeId = authStore.userInfo?.employeeId;
-  if (item.responsibleUserId && currentUserId && item.responsibleUserId === Number(currentUserId)) return true;
-  if (item.responsibleUserId && currentEmployeeId && item.responsibleUserId === Number(currentEmployeeId)) return true;
+  if (item.responsibleUserId && currentUserId && Number(item.responsibleUserId) === Number(currentUserId)) return true;
+  if (item.responsibleUserId && currentEmployeeId && Number(item.responsibleUserId) === Number(currentEmployeeId)) return true;
+  if (item.responsibleRole === 'NEW_EMPLOYEE' && authStore.hasRole('EMPLOYEE')) {
+    if (item.employeeId && currentEmployeeId && Number(item.employeeId) === Number(currentEmployeeId)) return true;
+  }
+  if (item.responsibleRole === 'MENTOR' && checklistStore.currentChecklist?.mentorId) {
+    if (currentEmployeeId && Number(checklistStore.currentChecklist.mentorId) === Number(currentEmployeeId)) return true;
+    if (currentUserId && Number(checklistStore.currentChecklist.mentorId) === Number(currentUserId)) return true;
+  }
   return false;
 };
 

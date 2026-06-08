@@ -35,6 +35,8 @@ public class OnboardingChecklistItem {
 
     private Boolean isTemporary;
 
+    private String responsibleRole;
+
     private Long responsibleUserId;
 
     private String responsibleUserName;

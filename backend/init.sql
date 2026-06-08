@@ -159,18 +159,18 @@ INSERT INTO sys_role (role_code, role_name, description) VALUES
 
 -- 插入默认管理员账号（用户名: admin, 密码: admin123，使用BCrypt加密）
 -- BCrypt加密后的 admin123: $2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2
-INSERT INTO sys_user (username, password, nickname, email, role_id, employee_id, status, is_first_login) VALUES
-('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', 'admin@example.com', NULL, 1, 1, 1);
+INSERT INTO sys_user (username, password, nickname, email, phone, role_id, employee_id, status, is_first_login) VALUES
+('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', 'admin@example.com', '13800000001', 1, NULL, 1, 1);
 
 -- 插入测试HR账号（用户名: hr, 密码: hr123456），关联员工：李四(产品经理，id=2)
 -- BCrypt加密后的 hr123456: $2a$10$h3X2e6Pa5gASllO9E.jgNemxHIbfz5GM..CbZJROZ1LfaLZlmGHAC
-INSERT INTO sys_user (username, password, nickname, email, role_id, employee_id, status, is_first_login) VALUES
-('hr', '$2a$10$h3X2e6Pa5gASllO9E.jgNemxHIbfz5GM..CbZJROZ1LfaLZlmGHAC', 'HR管理员', 'hr@example.com', 2, 2, 1, 1);
+INSERT INTO sys_user (username, password, nickname, email, phone, role_id, employee_id, status, is_first_login) VALUES
+('hr', '$2a$10$h3X2e6Pa5gASllO9E.jgNemxHIbfz5GM..CbZJROZ1LfaLZlmGHAC', '李四', 'lisi@example.com', '13800000002', 2, 2, 1, 1);
 
 -- 插入测试普通员工账号（用户名: employee, 密码: emp123456），关联员工：张三(后端开发，id=1)
 -- BCrypt加密后的 emp123456: $2a$10$qBpVYMZ6PdIaGnjWd9TlfOwPm9Vcp6cfTwi.P0ImXhvBwRBywXCMW
-INSERT INTO sys_user (username, password, nickname, email, role_id, employee_id, status, is_first_login) VALUES
-('employee', '$2a$10$qBpVYMZ6PdIaGnjWd9TlfOwPm9Vcp6cfTwi.P0ImXhvBwRBywXCMW', '张三', 'zhangsan@example.com', 3, 1, 1, 1);
+INSERT INTO sys_user (username, password, nickname, email, phone, role_id, employee_id, status, is_first_login) VALUES
+('employee', '$2a$10$qBpVYMZ6PdIaGnjWd9TlfOwPm9Vcp6cfTwi.P0ImXhvBwRBywXCMW', '张三', 'zhangsan@example.com', '13800000003', 3, 1, 1, 1);
 
 -- ==================== 考勤模块 ====================
 
@@ -743,6 +743,7 @@ CREATE TABLE IF NOT EXISTS onboarding_checklist_item (
     stage TINYINT NOT NULL COMMENT '阶段：1-入职前，2-首日，3-首周，4-首月',
     sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
     is_temporary TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否临时追加：0-否，1-是',
+    responsible_role VARCHAR(50) DEFAULT NULL COMMENT '责任人角色：NEW_EMPLOYEE-新员工，MENTOR-导师，HR-HR，DEPARTMENT_HEAD-部门负责人，SPECIFIC-指定人员',
     responsible_user_id BIGINT DEFAULT NULL COMMENT '责任人ID',
     responsible_user_name VARCHAR(100) DEFAULT NULL COMMENT '责任人姓名',
     due_date DATE NOT NULL COMMENT '截止日期',

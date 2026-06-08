@@ -152,12 +152,28 @@ public class AuthService {
             return user.getEmployeeId();
         }
         LambdaQueryWrapper<Employee> wrapper = new LambdaQueryWrapper<>();
-        if (user.getEmail() != null) {
+        boolean hasCondition = false;
+        if (user.getEmail() != null && !user.getEmail().isEmpty()) {
             wrapper.eq(Employee::getEmail, user.getEmail());
-        } else if (user.getUsername() != null) {
-            wrapper.eq(Employee::getName, user.getNickname() != null ? user.getNickname() : user.getUsername());
+            hasCondition = true;
+        }
+        String nameKeyword = user.getNickname() != null && !user.getNickname().isEmpty()
+                ? user.getNickname() : user.getUsername();
+        if (nameKeyword != null && !nameKeyword.isEmpty()) {
+            if (hasCondition) {
+                wrapper.or();
+            }
+            wrapper.eq(Employee::getName, nameKeyword);
+            hasCondition = true;
+        }
+        if (!hasCondition) {
+            return null;
         }
         Employee emp = employeeMapper.selectOne(wrapper);
+        if (emp != null) {
+            user.setEmployeeId(emp.getId());
+            sysUserMapper.updateById(user);
+        }
         return emp != null ? emp.getId() : null;
     }
 

@@ -44,6 +44,12 @@ public class OnboardingChecklistController {
         return Result.success(checklistService.getByEmployeeId(employeeId));
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
+    public Result<OnboardingChecklist> getMyChecklist() {
+        return Result.success(checklistService.getMyChecklist());
+    }
+
     @GetMapping("/{id}/progress")
     @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
     public Result<OnboardingProgressDTO> getProgress(@PathVariable Long id) {
