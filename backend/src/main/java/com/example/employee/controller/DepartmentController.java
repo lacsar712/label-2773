@@ -142,10 +142,20 @@ public class DepartmentController {
         return Result.success(snapshotService.getSnapshot(id));
     }
 
-    @GetMapping("/snapshots/{id}/restore")
+    @GetMapping("/snapshots/{id}/preview")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
-    public Result<List<Department>> restoreSnapshot(@PathVariable Long id) {
-        return Result.success(snapshotService.restoreSnapshot(id));
+    public Result<List<Department>> previewSnapshot(@PathVariable Long id) {
+        return Result.success(snapshotService.getSnapshotTree(id));
+    }
+
+    @PostMapping("/snapshots/{id}/apply")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AuditLog(module = TargetModule.DEPARTMENT, operation = OperationType.UPDATE)
+    public Result<Boolean> applySnapshot(@PathVariable Long id) {
+        UserInfoDTO user = UserContext.getCurrentUser();
+        return Result.success(snapshotService.applySnapshot(id,
+                user != null ? user.getUserId() : null,
+                user != null ? user.getNickname() : null));
     }
 
     @DeleteMapping("/snapshots/{id}")

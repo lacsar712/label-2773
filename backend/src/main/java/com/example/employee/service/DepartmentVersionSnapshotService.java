@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -81,7 +82,7 @@ public class DepartmentVersionSnapshotService extends ServiceImpl<DepartmentVers
         return getById(id);
     }
 
-    public List<Department> restoreSnapshot(Long id) {
+    public List<Department> getSnapshotTree(Long id) {
         DepartmentVersionSnapshot snapshot = getById(id);
         if (snapshot == null) {
             throw new RuntimeException("快照不存在");
@@ -92,6 +93,74 @@ public class DepartmentVersionSnapshotService extends ServiceImpl<DepartmentVers
         } catch (JsonProcessingException e) {
             throw new RuntimeException("反序列化部门树失败", e);
         }
+    }
+
+    private List<Department> flattenTree(List<Department> tree) {
+        List<Department> result = new ArrayList<>();
+        flattenTreeRecursive(tree, result);
+        return result;
+    }
+
+    private void flattenTreeRecursive(List<Department> nodes, List<Department> result) {
+        if (nodes == null) return;
+        for (Department dept : nodes) {
+            result.add(dept);
+            if (dept.getChildren() != null && !dept.getChildren().isEmpty()) {
+                flattenTreeRecursive(dept.getChildren(), result);
+            }
+        }
+    }
+
+    @Transactional
+    public boolean applySnapshot(Long id, Long operatorId, String operatorName) {
+        DepartmentVersionSnapshot snapshot = getById(id);
+        if (snapshot == null) {
+            throw new RuntimeException("快照不存在");
+        }
+
+        createAutoSnapshot(operatorId, operatorName, "恢复快照前自动备份 - " + snapshot.getSnapshotName());
+
+        List<Department> snapshotTree;
+        try {
+            snapshotTree = objectMapper.readValue(snapshot.getTreeSnapshot(),
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Department.class));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("反序列化部门树失败", e);
+        }
+
+        List<Department> flatSnapshot = flattenTree(snapshotTree);
+
+        for (Department snapDept : flatSnapshot) {
+            Department existing = departmentService.getById(snapDept.getId());
+            if (existing != null) {
+                existing.setName(snapDept.getName());
+                existing.setCode(snapDept.getCode());
+                existing.setDescription(snapDept.getDescription());
+                existing.setLeader(snapDept.getLeader());
+                existing.setDeputyLeader(snapDept.getDeputyLeader());
+                existing.setParentId(snapDept.getParentId());
+                existing.setHeadcountLimit(snapDept.getHeadcountLimit());
+                existing.setLevelType(snapDept.getLevelType());
+                existing.setEnabled(snapDept.getEnabled());
+                departmentService.updateById(existing);
+            } else {
+                Department newDept = new Department();
+                newDept.setId(snapDept.getId());
+                newDept.setName(snapDept.getName());
+                newDept.setCode(snapDept.getCode());
+                newDept.setDescription(snapDept.getDescription());
+                newDept.setLeader(snapDept.getLeader());
+                newDept.setDeputyLeader(snapDept.getDeputyLeader());
+                newDept.setParentId(snapDept.getParentId());
+                newDept.setHeadcountLimit(snapDept.getHeadcountLimit());
+                newDept.setLevelType(snapDept.getLevelType());
+                newDept.setEnabled(snapDept.getEnabled());
+                departmentService.save(newDept);
+            }
+        }
+
+        createAutoSnapshot(operatorId, operatorName, "恢复快照后 - " + snapshot.getSnapshotName());
+        return true;
     }
 
     @Transactional

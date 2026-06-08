@@ -204,9 +204,14 @@ export const useDepartmentStore = defineStore('department', {
       const res = await request.get<any, Result<VersionSnapshot>>(`${API_URL}/snapshots/${id}`);
       return res.data;
     },
-    async restoreSnapshot(id: number): Promise<Department[]> {
-      const res = await request.get<any, Result<Department[]>>(`${API_URL}/snapshots/${id}/restore`);
+    async previewSnapshot(id: number): Promise<Department[]> {
+      const res = await request.get<any, Result<Department[]>>(`${API_URL}/snapshots/${id}/preview`);
       return res.data;
+    },
+    async applySnapshot(id: number) {
+      await request.post<any, Result<boolean>>(`${API_URL}/snapshots/${id}/apply`);
+      message.success('已恢复到该历史版本');
+      await this.refreshAll();
     },
     async deleteSnapshot(id: number) {
       await request.delete<any, Result<boolean>>(`${API_URL}/snapshots/${id}`);

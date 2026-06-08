@@ -461,6 +461,16 @@
               <a-button type="link" @click="handlePreviewSnapshot(record)">预览</a-button>
               <a-popconfirm
                 v-permission="['ADMIN']"
+                title="确定将组织架构恢复到此版本？此操作将自动备份当前状态。"
+                @confirm="handleApplySnapshot(record)"
+                ok-text="确定恢复"
+                cancel-text="取消"
+                ok-type="danger"
+              >
+                <a-button type="link" style="color: #fa8c16">恢复</a-button>
+              </a-popconfirm>
+              <a-popconfirm
+                v-permission="['ADMIN']"
                 title="确定删除该快照？"
                 @confirm="store.deleteSnapshot(record.id)"
                 ok-text="确定"
@@ -477,10 +487,24 @@
     <a-modal
       v-model:open="previewModalVisible"
       title="快照预览"
-      :footer="null"
       :width="600"
       :destroy-on-close="true"
     >
+      <template #footer v-permission="['ADMIN']">
+        <a-button @click="previewModalVisible = false">关闭</a-button>
+        <a-popconfirm
+          title="确定将组织架构恢复到此版本？此操作将自动备份当前状态。"
+          @confirm="handleApplySnapshot(currentPreviewSnapshot); previewModalVisible = false"
+          ok-text="确定恢复"
+          cancel-text="取消"
+          ok-type="danger"
+        >
+          <a-button type="primary" danger>
+            <template #icon><history-outlined /></template>
+            恢复到此版本
+          </a-button>
+        </a-popconfirm>
+      </template>
       <div v-if="previewSnapshotData" class="preview-header">
         <div class="preview-title">{{ currentPreviewSnapshot?.snapshotName }}</div>
         <div class="preview-meta">
@@ -629,13 +653,13 @@ const employeeColumns = [
 ];
 
 const snapshotColumns = [
-  { title: '快照名称', dataIndex: 'snapshotName', key: 'name', width: '25%' },
-  { title: '类型', key: 'type', width: '12%' },
-  { title: '描述', dataIndex: 'description', key: 'desc', width: '25%' },
-  { title: '操作人', dataIndex: 'operatorName', key: 'op', width: '12%' },
-  { title: '创建时间', dataIndex: 'createTime', key: 'time', width: '16%',
+  { title: '快照名称', dataIndex: 'snapshotName', key: 'name', width: '22%' },
+  { title: '类型', key: 'type', width: '10%' },
+  { title: '描述', dataIndex: 'description', key: 'desc', width: '23%' },
+  { title: '操作人', dataIndex: 'operatorName', key: 'op', width: '10%' },
+  { title: '创建时间', dataIndex: 'createTime', key: 'time', width: '15%',
     customRender: ({ record }: any) => formatTime(record.createTime) },
-  { title: '操作', key: 'action', width: '10%' },
+  { title: '操作', key: 'action', width: '20%' },
 ];
 
 const getLevelIcon = (levelType?: number) => {
@@ -935,8 +959,17 @@ const handleCreateSnapshot = async () => {
 
 const handlePreviewSnapshot = async (record: any) => {
   currentPreviewSnapshot.value = record;
-  previewSnapshotData.value = await store.restoreSnapshot(record.id);
+  previewSnapshotData.value = await store.previewSnapshot(record.id);
   previewModalVisible.value = true;
+};
+
+const handleApplySnapshot = async (record: any) => {
+  try {
+    await store.applySnapshot(record.id);
+    snapshotModalVisible.value = false;
+  } catch (e) {
+    // handled
+  }
 };
 </script>
 
